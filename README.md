@@ -1,12 +1,11 @@
 # BillVolt Admin Portal
 
-Internship project — full-stack admin dashboard for BillVolt, a medical billing,
-revenue cycle management, and credentialing company. The portal centralizes
-practice management, provider records, credentialing tracking, follow-ups,
-reporting, and user administration into a single internal tool, with an
-AI Assistant for quick data lookups.
+A full-stack admin dashboard for BillVolt, a medical billing and credentialing
+company. The portal centralizes practice management, provider records,
+credentialing tracking, follow-ups, reporting, and user administration into
+a single internal tool, with an AI Assistant for quick data lookups.
 
-**Status:** 🚧 In development — Day 1 setup (Module 1 in progress)
+**Status:** In development
 
 ## Tech Stack
 
@@ -18,18 +17,28 @@ AI Assistant for quick data lookups.
 
 ```
 billvolt-admin-portal/
-├── backend/          # Express API
+├── backend/
 │   └── src/
-│       ├── config/       # DB connection, env config
+│       ├── config/       # DB connection
 │       ├── controllers/  # Route handler logic
-│       ├── middleware/   # Auth, error handling, etc.
+│       ├── middleware/   # Auth, validation
 │       ├── models/       # Mongoose schemas
 │       ├── routes/       # Express routers
-│       ├── app.js        # Express app setup
-│       └── server.js     # Entry point
-└── frontend/         # React (Vite) app
+│       ├── validators/   # Request validation schemas
+│       ├── app.js
+│       └── server.js
+└── frontend/
     └── src/
 ```
+
+## Data Models
+
+- **User** — accounts with role-based access (admin/staff)
+- **Practice** — medical practices/clinics
+- **Provider** — healthcare provider records, linked to a practice
+- **CredentialingRecord** — provider × payer credentialing status
+- **FollowUp** — tasks/reminders tied to credentialing records
+- **AuditLog** — tracks sensitive data access and changes
 
 ## Getting Started
 
@@ -37,43 +46,32 @@ billvolt-admin-portal/
 
 ```bash
 cd backend
-cp .env.example .env    # fill in MONGODB_URI, JWT_SECRET, etc.
+cp .env.example .env    # fill in MONGODB_URI, JWT_SECRET
 npm install
-npm run dev              # starts on http://localhost:5000
+npm run dev              # http://localhost:5000
 ```
 
 Health check: `GET http://localhost:5000/api/health`
+
+Auth endpoints:
+- `POST /api/auth/register` — create an account
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
 ### Frontend
 
 ```bash
 cd frontend
 npm install
-npm run dev               # starts on http://localhost:5173
+npm run dev               # http://localhost:5173
 ```
 
 ## Roadmap
 
-| Module | Dates | Focus |
-|--------|-------|-------|
-| 1 | Jul 20 – Jul 26 | Project setup, auth (RBAC), dashboard UI, user management, DB design |
-| 2 | Jul 27 – Aug 02 | Practices, Providers, Credentialing Grid, CRUD, search/filtering |
-| 3 | Aug 03 – Aug 09 | Follow-ups, Reports & Analytics, AI Assistant (Gemini), notifications |
-| 4 | Aug 10 – Aug 15 | Settings, testing, security hardening, deployment, docs |
-
-## Modules (Planned)
-
-- **Dashboard** — real-time overview and key metrics
-- **Practices** — manage medical practices/clinics
-- **Providers** — manage healthcare provider records
-- **Credentialing Grid** — provider × payer credentialing status tracking
-- **Follow-ups** — task/reminder tracking tied to credentialing items
-- **Reports & Analytics** — exportable reports (PDF, CSV)
-- **AI Assistant** — natural-language queries over portal data (Gemini API)
-- **User Management** — role-based access control (Admin / Staff)
-- **Settings** — system configuration
-
-## Author
-
-Ali Akbar — Full Stack Web Development Intern
-Internship ID: ZYNVEX-CERT-0830
+| Module | Focus |
+|--------|-------|
+| 1 | Project setup, auth, dashboard UI, user management, DB design |
+| 2 | Practices, Providers, Credentialing Grid, CRUD, search/filtering |
+| 3 | Follow-ups, Reports & Analytics, AI Assistant, notifications |
+| 4 | Settings, testing, security hardening, deployment, docs |
