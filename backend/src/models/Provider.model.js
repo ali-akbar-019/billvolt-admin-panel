@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { encryptField, decryptField } = require('../utils/crypto.util');
 
 const providerSchema = new mongoose.Schema(
   {
@@ -7,7 +8,13 @@ const providerSchema = new mongoose.Schema(
     licenseNumber: { type: String, trim: true },
     specialty: { type: String, trim: true, index: true },
     dob: { type: Date },
-    ssn: { type: String, select: false }, // TODO: encrypt at rest before this holds real data
+    // Encrypted at rest — never queryable, never logged in plaintext.
+    ssn: {
+      type: String,
+      select: false,
+      set: (value) => (value ? encryptField(value) : value),
+      get: (value) => (value ? decryptField(value) : value),
+    },
     practiceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Practice', required: true, index: true },
     contact: {
       phone: String,
@@ -15,7 +22,7 @@ const providerSchema = new mongoose.Schema(
     },
     status: { type: String, enum: ['active', 'inactive'], default: 'active', index: true },
   },
-  { timestamps: true }
+  { timestamps: true, toJSON: { getters: true }, toObject: { getters: true } }
 );
 
 providerSchema.virtual('credentialingRecords', {

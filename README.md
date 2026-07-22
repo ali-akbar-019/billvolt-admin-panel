@@ -46,18 +46,28 @@ billvolt-admin-portal/
 
 ```bash
 cd backend
-cp .env.example .env    # fill in MONGODB_URI, JWT_SECRET
+cp .env.example .env    # fill in MONGODB_URI, REDIS_URL, and secrets
 npm install
 npm run dev              # http://localhost:5000
+
+# Once connected, create your first admin account:
+node src/scripts/seedAdmin.js
 ```
 
-Health check: `GET http://localhost:5000/api/health`
+Health check: `GET http://localhost:5000/api/health` (reports DB + Redis status)
 
 Auth endpoints:
-- `POST /api/auth/register` — create an account
+- `POST /api/auth/register` — admin-only, creates staff/admin accounts
 - `POST /api/auth/login`
+- `POST /api/auth/refresh` — rotates the refresh token
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
+
+**Security notes:**
+- Access tokens are short-lived (15 min); refresh tokens rotate on every use and are tracked in Redis so a session can be revoked instantly
+- Provider SSNs are encrypted at rest (AES-256-GCM)
+- Rate limiting on login to slow brute-force attempts
+- RBAC enforced server-side via middleware (admin/staff roles)
 
 ### Frontend
 

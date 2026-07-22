@@ -1,15 +1,15 @@
-const { verifyToken } = require('../utils/token.util');
+const { verifyAccessToken } = require('../utils/token.util');
 const User = require('../models/User.model');
 
-// Verifies the JWT cookie and attaches req.user. 401 if missing/invalid.
-const requireAuth = async (req, res, next) => {
+// Verifies the access token cookie and attaches req.user. 401 if missing/invalid.
+const protect = async (req, res, next) => {
   try {
-    const token = req.cookies?.token;
+    const token = req.cookies?.accessToken;
     if (!token) {
       return res.status(401).json({ error: 'Not authenticated' });
     }
 
-    const decoded = verifyToken(token);
+    const decoded = verifyAccessToken(token);
     const user = await User.findById(decoded.sub);
 
     if (!user || user.status !== 'active') {
@@ -23,4 +23,12 @@ const requireAuth = async (req, res, next) => {
   }
 };
 
-module.exports = { requireAuth };
+// Restricts a route to specific roles. Usage: authorize('admin')
+const authorize = (...allowedRoles) => (req, res, next) => {
+  if (!req.user || !allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'You do not have permission to perform this action' });
+  }
+  next();
+};
+
+module.exports = { protect, authorize };
