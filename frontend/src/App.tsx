@@ -1,30 +1,63 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthContext'
+import { ProtectedRoute } from './routes/ProtectedRoute'
+import { AppShell } from './components/layout/AppShell'
+import { Login } from './pages/Login'
+import { Dashboard } from './pages/Dashboard'
+import { Practices } from './pages/Practices'
+import { Providers } from './pages/Providers'
+import { CredentialingGrid } from './pages/CredentialingGrid'
+import { FollowUps } from './pages/FollowUps'
+import { Reports } from './pages/Reports'
+import { AIAssistant } from './pages/AIAssistant'
+import { Users } from './pages/Users'
+import { SettingsPage } from './pages/SettingsPage'
+
 function App() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6">
-      <div className="text-center max-w-lg">
-        <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center font-bold text-white">
-            B
-          </div>
-          <span className="text-lg font-semibold tracking-wide text-slate-200">
-            billvolt
-          </span>
-        </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/login" element={<Login />} />
 
-        <h1 className="text-3xl sm:text-4xl font-semibold mb-3">
-          Admin Portal
-        </h1>
-        <p className="text-slate-400 mb-8 leading-relaxed">
-          We're building a centralized dashboard for practices, providers,
-          credentialing, and reporting. Coming soon.
-        </p>
+          <Route
+            element={
+              <ProtectedRoute>
+                <AppShell />
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/practices" element={<Practices />} />
+            <Route path="/providers" element={<Providers />} />
+            <Route path="/credentialing" element={<CredentialingGrid />} />
+            <Route path="/follow-ups" element={<FollowUps />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/ai-assistant" element={<AIAssistant />} />
 
-        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-slate-700 text-sm text-slate-400">
-          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          In development
-        </span>
-      </div>
-    </div>
+            <Route
+              path="/users"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <Users />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   )
 }
 

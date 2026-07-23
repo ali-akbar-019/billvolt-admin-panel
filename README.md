@@ -73,9 +73,14 @@ Auth endpoints:
 
 ```bash
 cd frontend
+cp .env.example .env
 npm install
 npm run dev               # http://localhost:5173
 ```
+
+App shell (sidebar navigation, routing, protected routes) is wired up.
+Login and Dashboard are functional but styling is still basic — polish
+comes next.
 
 ## Roadmap
 

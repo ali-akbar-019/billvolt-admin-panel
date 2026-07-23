@@ -1,1 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=Inter:wght@400;500;600&display=swap');
 @import "tailwindcss";
+
+:root {
+  /* Surfaces */
+  --bg-page: #F7F8FA;
+  --bg-surface: #FFFFFF;
+  --bg-surface-2: #F1F3F7;
+
+  /* Text */
+  --text-primary: #10162B;
+  --text-secondary: #5B6478;
+  --text-muted: #8B93A7;
+
+  /* Accent (cobalt) */
+  --accent: #2954E0;
+  --accent-hover: #1F42B8;
+  --accent-tint: #E6ECFC;
+
+  /* Borders */
+  --border: rgba(16, 22, 43, 0.08);
+  --border-strong: rgba(16, 22, 43, 0.14);
+
+  /* Status colors (Credentialing Grid + badges) */
+  --status-not-started: #8B93A7;
+  --status-not-started-tint: #EEF0F3;
+  --status-in-progress: #D97706;
+  --status-in-progress-tint: #FAEEDA;
+  --status-submitted: #7C5CFC;
+  --status-submitted-tint: #EEEDFE;
+  --status-approved: #1D9E75;
+  --status-approved-tint: #E1F5EE;
+  --status-denied: #E24B4A;
+  --status-denied-tint: #FCEBEB;
+  --status-expired: #92621B;
+  --status-expired-tint: #F5EDE1;
+
+  /* Typography */
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* Layout */
+  --radius: 8px;
+  --radius-card: 12px;
+  --shadow-card: 0 1px 2px rgba(16, 22, 43, 0.06), 0 4px 12px rgba(16, 22, 43, 0.05);
+}
+
+body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+/* Tabular figures for aligned numbers in tables/stat cards */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
