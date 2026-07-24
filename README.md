@@ -78,9 +78,9 @@ npm install
 npm run dev               # http://localhost:5173
 ```
 
-App shell (sidebar navigation, routing, protected routes) is wired up.
-Login and Dashboard are functional but styling is still basic — polish
-comes next.
+Login page and Dashboard are fully styled — matching the design system
+(colors, typography, card elevation). Other modules still show a
+placeholder until built.
 
 ## Roadmap
 
