@@ -79,8 +79,17 @@ npm run dev               # http://localhost:5173
 ```
 
 Login page and Dashboard are fully styled — matching the design system
-(colors, typography, card elevation). Other modules still show a
-placeholder until built.
+(colors, typography, card elevation).
+
+**User Management** (admin only) is now fully functional: list all users,
+change roles, activate/disable accounts, remove users, and add new team
+members — with toast notifications for feedback. Other modules still show
+a placeholder until built.
+
+Admin endpoints:
+- `GET /api/users` — list all users
+- `PATCH /api/users/:id` — update role/status
+- `DELETE /api/users/:id` — remove a user
 
 ## Roadmap
 
