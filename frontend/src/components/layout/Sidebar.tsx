@@ -27,16 +27,21 @@ const ADMIN_ITEMS = [
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { user } = useAuth();
 
   const linkStyle = (isActive: boolean) => ({
     display: 'flex',
     alignItems: 'center',
     gap: 10,
-    padding: '9px 14px',
+    padding: '11px 14px',
     borderRadius: 'var(--radius)',
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: 500,
     color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
     background: isActive ? 'var(--accent-tint)' : 'transparent',
@@ -46,14 +51,15 @@ export function Sidebar() {
 
   return (
     <aside
+      className={`app-shell-sidebar${isOpen ? ' is-open' : ''}`}
       style={{
-        width: 240,
+        width: 260,
         flexShrink: 0,
         background: 'var(--bg-surface)',
         borderRight: '1px solid var(--border)',
         display: 'flex',
         flexDirection: 'column',
-        padding: '20px 14px',
+        padding: '22px 16px',
         height: '100vh',
         position: 'sticky',
         top: 0,
@@ -62,9 +68,9 @@ export function Sidebar() {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', marginBottom: 28 }}>
         <div
           style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
+            width: 34,
+            height: 34,
+            borderRadius: 9,
             background: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
@@ -84,8 +90,8 @@ export function Sidebar() {
 
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV_ITEMS.map(({ to, label, icon: Icon }) => (
-          <NavLink key={to} to={to} style={({ isActive }) => linkStyle(isActive)}>
-            <Icon size={18} strokeWidth={2} />
+          <NavLink key={to} to={to} onClick={onClose} style={({ isActive }) => linkStyle(isActive)}>
+            <Icon size={19} strokeWidth={2} />
             {label}
           </NavLink>
         ))}
@@ -95,8 +101,8 @@ export function Sidebar() {
         <>
           <div
             style={{
-              fontSize: 11,
-              fontWeight: 500,
+              fontSize: 12,
+              fontWeight: 600,
               color: 'var(--text-muted)',
               textTransform: 'uppercase',
               letterSpacing: '0.04em',
@@ -107,8 +113,8 @@ export function Sidebar() {
           </div>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {ADMIN_ITEMS.map(({ to, label, icon: Icon }) => (
-              <NavLink key={to} to={to} style={({ isActive }) => linkStyle(isActive)}>
-                <Icon size={18} strokeWidth={2} />
+              <NavLink key={to} to={to} onClick={onClose} style={({ isActive }) => linkStyle(isActive)}>
+                <Icon size={19} strokeWidth={2} />
                 {label}
               </NavLink>
             ))}

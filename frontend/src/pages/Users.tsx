@@ -17,7 +17,7 @@ const statusBadge = (status: string) => ({
 });
 
 const badgeStyle: React.CSSProperties = {
-  fontSize: 12, fontWeight: 500, padding: '3px 10px', borderRadius: 20, textTransform: 'capitalize',
+  fontSize: 12.5, fontWeight: 600, padding: '4px 12px', borderRadius: 20, textTransform: 'capitalize',
 };
 
 export function Users() {
@@ -70,8 +70,8 @@ export function Users() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>User management</h1>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: 0 }}>
+          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>User management</h1>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
             Manage staff accounts and roles.
           </p>
         </div>
@@ -79,22 +79,23 @@ export function Users() {
           onClick={() => setShowModal(true)}
           style={{
             display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
-            border: 'none', borderRadius: 'var(--radius)', padding: '9px 14px', fontSize: 14, fontWeight: 500, cursor: 'pointer',
+            border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
           }}
         >
           <Plus size={16} /> Add user
         </button>
       </div>
 
-      <div style={{ background: 'var(--bg-surface)', borderRadius: 'var(--radius-card)', boxShadow: 'var(--shadow-card)', overflow: 'hidden' }}>
+      <div className="surface-card" style={{ overflow: 'hidden' }}>
         {isLoading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading users…</div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
+          <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border)' }}>
                 {['Name', 'Email', 'Role', 'Status', 'Last login', ''].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '12px 18px', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                  <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                     {h}
                   </th>
                 ))}
@@ -103,9 +104,9 @@ export function Users() {
             <tbody>
               {users.map((u) => (
                 <tr key={u._id} style={{ borderBottom: '1px solid var(--border)', opacity: busyId === u._id ? 0.5 : 1 }}>
-                  <td style={{ padding: '12px 18px', fontWeight: 500 }}>{u.name}</td>
-                  <td style={{ padding: '12px 18px', color: 'var(--text-secondary)' }}>{u.email}</td>
-                  <td style={{ padding: '12px 18px' }}>
+                  <td style={{ padding: '14px 20px', fontWeight: 500 }}>{u.name}</td>
+                  <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                  <td style={{ padding: '14px 20px' }}>
                     <select
                       value={u.role}
                       disabled={u._id === currentUser?._id || busyId === u._id}
@@ -116,7 +117,7 @@ export function Users() {
                       <option value="admin">Admin</option>
                     </select>
                   </td>
-                  <td style={{ padding: '12px 18px' }}>
+                  <td style={{ padding: '14px 20px' }}>
                     <button
                       disabled={u._id === currentUser?._id || busyId === u._id}
                       onClick={() => updateUser(u._id, { status: u.status === 'active' ? 'disabled' : 'active' })}
@@ -125,10 +126,10 @@ export function Users() {
                       {u.status}
                     </button>
                   </td>
-                  <td style={{ padding: '12px 18px', color: 'var(--text-muted)' }}>
+                  <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
                     {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : 'Never'}
                   </td>
-                  <td style={{ padding: '12px 18px', textAlign: 'right' }}>
+                  <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                     {u._id !== currentUser?._id && (
                       <button
                         onClick={() => deleteUser(u._id)}
@@ -144,6 +145,7 @@ export function Users() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 

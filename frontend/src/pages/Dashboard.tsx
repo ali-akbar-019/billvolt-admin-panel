@@ -12,40 +12,34 @@ export function Dashboard() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 24, margin: '0 0 4px' }}>
+      <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>
         Welcome back, {user?.name?.split(' ')[0]}
       </h1>
-      <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 24px' }}>
+      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 28px' }}>
         Here's what's happening across your practices today.
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
         {STAT_CARDS.map(({ label, value, icon: Icon, tint, color }) => (
-          <div
-            key={label}
-            style={{
-              background: 'var(--bg-surface)',
-              borderRadius: 'var(--radius-card)',
-              boxShadow: 'var(--shadow-card)',
-              padding: '18px',
-            }}
-          >
+          <div key={label} className="surface-card surface-card--hoverable" style={{ padding: '22px' }}>
             <div
               style={{
-                width: 36,
-                height: 36,
-                borderRadius: 9,
+                width: 42,
+                height: 42,
+                borderRadius: 11,
                 background: tint,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                marginBottom: 12,
+                marginBottom: 16,
               }}
             >
-              <Icon size={18} color={color} />
+              <Icon size={20} color={color} />
             </div>
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: '0 0 4px' }}>{label}</p>
-            <p className="tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 500, margin: 0 }}>
+            <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: '0 0 6px', fontWeight: 500 }}>
+              {label}
+            </p>
+            <p className="tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 600, margin: 0 }}>
               {value}
             </p>
           </div>
@@ -53,14 +47,12 @@ export function Dashboard() {
       </div>
 
       <div
+        className="surface-card"
         style={{
-          background: 'var(--bg-surface)',
-          borderRadius: 'var(--radius-card)',
-          boxShadow: 'var(--shadow-card)',
-          padding: '24px',
+          padding: '40px 24px',
           textAlign: 'center',
           color: 'var(--text-muted)',
-          fontSize: 14,
+          fontSize: 'var(--fs-small)',
         }}
       >
         Charts and live data connect once the Practices and Credentialing modules are built.

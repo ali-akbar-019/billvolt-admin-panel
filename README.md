@@ -50,8 +50,10 @@ cp .env.example .env    # fill in MONGODB_URI, REDIS_URL, and secrets
 npm install
 npm run dev              # http://localhost:5000
 
-# Once connected, create your first admin account:
-node src/scripts/seedAdmin.js
+# Once connected, create your first admin account (defaults to
+# admin@billvolt.com / Admin@12345 unless ADMIN_EMAIL / ADMIN_PASSWORD
+# are set in .env — safe to re-run, it just resets the password):
+npm run seed:admin
 ```
 
 Health check: `GET http://localhost:5000/api/health` (reports DB + Redis status)

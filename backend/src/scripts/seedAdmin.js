@@ -1,36 +1,45 @@
-// Bootstraps the very first admin account.
-// Run once after setting up MongoDB: node src/scripts/seedAdmin.js
+// Creates (or resets) the first admin account — no prompts, just run it.
+//   npm run seed:admin
+//
+// Uses these from .env if present, otherwise falls back to defaults below:
+//   ADMIN_NAME, ADMIN_EMAIL, ADMIN_PASSWORD
+//
+// Safe to re-run: if the account already exists, it resets the password
+// and makes sure the role is 'admin' instead of failing.
+
 require('dotenv').config();
 const mongoose = require('mongoose');
-const readline = require('readline');
 const connectDB = require('../config/db');
 const User = require('../models/User.model');
 
-const ask = (question) => {
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise((resolve) => rl.question(question, (answer) => {
-    rl.close();
-    resolve(answer);
-  }));
-};
+const NAME = process.env.ADMIN_NAME || 'Admin';
+const EMAIL = (process.env.ADMIN_EMAIL || 'admin@billvolt.com').trim().toLowerCase();
+const PASSWORD = process.env.ADMIN_PASSWORD || 'Admin@12345';
 
 const run = async () => {
   await connectDB();
 
-  const name = await ask('Admin name: ');
-  const email = (await ask('Admin email: ')).trim().toLowerCase();
-  const password = await ask('Admin password (min 8 chars): ');
+  const passwordHash = await User.hashPassword(PASSWORD);
+  const existing = await User.findOne({ email: EMAIL });
 
-  const existing = await User.findOne({ email });
   if (existing) {
-    console.log(`A user with email ${email} already exists. Aborting.`);
-    process.exit(1);
+    existing.name = NAME;
+    existing.passwordHash = passwordHash;
+    existing.role = 'admin';
+    existing.status = 'active';
+    await existing.save();
+    console.log(`Existing account updated and reset to admin: ${EMAIL}`);
+  } else {
+    await User.create({ name: NAME, email: EMAIL, passwordHash, role: 'admin', status: 'active' });
+    console.log(`Admin account created: ${EMAIL}`);
   }
 
-  const passwordHash = await User.hashPassword(password);
-  await User.create({ name, email, passwordHash, role: 'admin' });
+  console.log('---');
+  console.log(`Email:    ${EMAIL}`);
+  console.log(`Password: ${PASSWORD}`);
+  console.log('---');
+  console.log('Log in with these, then change the password from the app once auth for that ships.');
 
-  console.log(`Admin account created for ${email}.`);
   await mongoose.disconnect();
   process.exit(0);
 };

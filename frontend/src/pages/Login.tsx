@@ -50,7 +50,7 @@ export function Login() {
               color: '#fff',
               fontFamily: 'var(--font-display)',
               fontWeight: 600,
-              fontSize: 17,
+              fontSize: 19,
             }}
           >
             B
@@ -66,11 +66,11 @@ export function Login() {
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-card)',
             boxShadow: 'var(--shadow-card)',
-            padding: '32px 28px',
+            padding: '36px 32px',
           }}
         >
-          <h1 style={{ fontSize: 22, margin: '0 0 4px' }}>Sign in</h1>
-          <p style={{ fontSize: 14, color: 'var(--text-secondary)', margin: '0 0 24px' }}>
+          <h1 style={{ fontSize: 26, margin: '0 0 6px' }}>Sign in</h1>
+          <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: '0 0 28px' }}>
             Admin portal access for BillVolt staff.
           </p>
 
@@ -129,8 +129,8 @@ const labelStyle: React.CSSProperties = {
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
-  padding: '10px 12px',
-  fontSize: 14,
+  padding: '12px 14px',
+  fontSize: 15,
   border: '1px solid var(--border-strong)',
   borderRadius: 'var(--radius)',
   outline: 'none',
@@ -140,8 +140,8 @@ const inputStyle: React.CSSProperties = {
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({
   width: '100%',
-  padding: '11px',
-  fontSize: 14,
+  padding: '13px',
+  fontSize: 15,
   fontWeight: 500,
   color: '#fff',
   background: disabled ? 'var(--text-muted)' : 'var(--accent)',
