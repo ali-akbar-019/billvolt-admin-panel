@@ -93,6 +93,13 @@ Admin endpoints:
 - `PATCH /api/users/:id` — update role/status
 - `DELETE /api/users/:id` — remove a user
 
+Practice endpoints (any authenticated user, delete is admin-only):
+- `GET /api/practices` — list, with `?q=`, `?status=`, `?page=`, `?limit=`
+- `GET /api/practices/:id` — single practice, with linked providers
+- `POST /api/practices` — create
+- `PATCH /api/practices/:id` — update
+- `DELETE /api/practices/:id` — admin only
+
 ## Roadmap
 
 | Module | Focus |
