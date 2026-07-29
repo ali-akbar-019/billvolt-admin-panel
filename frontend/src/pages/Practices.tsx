@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, Building2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Plus, Search, ChevronLeft, ChevronRight, Building2, Pencil } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { PracticeFormModal } from '../components/PracticeFormModal';
@@ -16,6 +17,7 @@ const badgeStyle: React.CSSProperties = {
 
 export function Practices() {
   const { showToast } = useToast();
+  const navigate = useNavigate();
   const [practices, setPractices] = useState<Practice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -122,7 +124,7 @@ export function Practices() {
                 {practices.map((p) => (
                   <tr
                     key={p._id}
-                    onClick={() => setModalPractice(p)}
+                    onClick={() => navigate(`/practices/${p._id}`)}
                     style={{ borderBottom: '1px solid var(--border)', cursor: 'pointer' }}
                   >
                     <td style={{ padding: '14px 20px', fontWeight: 600 }}>{p.groupName}</td>
@@ -135,8 +137,14 @@ export function Practices() {
                     <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
                       {new Date(p.updatedAt).toLocaleDateString()}
                     </td>
-                    <td style={{ padding: '14px 20px', textAlign: 'right', color: 'var(--text-muted)', fontSize: 13 }}>
-                      Edit →
+                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setModalPractice(p); }}
+                        aria-label={`Quick edit ${p.groupName}`}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
+                      >
+                        <Pencil size={16} />
+                      </button>
                     </td>
                   </tr>
                 ))}

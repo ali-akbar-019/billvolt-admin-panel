@@ -6,6 +6,7 @@ import { AppShell } from './components/layout/AppShell'
 import { Login } from './pages/Login'
 import { Dashboard } from './pages/Dashboard'
 import { Practices } from './pages/Practices'
+import { PracticeWorkspace } from './pages/PracticeWorkspace'
 import { Providers } from './pages/Providers'
 import { CredentialingGrid } from './pages/CredentialingGrid'
 import { FollowUps } from './pages/FollowUps'
@@ -31,6 +32,7 @@ function App() {
           >
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/practices" element={<Practices />} />
+            <Route path="/practices/:id" element={<PracticeWorkspace />} />
             <Route path="/providers" element={<Providers />} />
             <Route path="/credentialing" element={<CredentialingGrid />} />
             <Route path="/follow-ups" element={<FollowUps />} />
