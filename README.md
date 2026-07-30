@@ -100,6 +100,14 @@ Practice endpoints (any authenticated user, delete is admin-only):
 - `PATCH /api/practices/:id` — update
 - `DELETE /api/practices/:id` — admin only
 
+Provider endpoints (any authenticated user, sensitive fields + delete are admin-only):
+- `GET /api/providers` — list, with `?q=`, `?practiceId=`, `?status=`, `?specialty=`, `?page=`, `?limit=`
+- `GET /api/providers/:id` — single provider (SSN and CAQH credentials excluded)
+- `GET /api/providers/:id/sensitive` — admin only, decrypts SSN + CAQH username/password, every call is audit logged
+- `POST /api/providers` — create (requires `practiceId`)
+- `PATCH /api/providers/:id` — update
+- `DELETE /api/providers/:id` — admin only
+
 ## Roadmap
 
 | Module | Focus |
