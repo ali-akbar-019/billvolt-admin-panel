@@ -45,6 +45,51 @@ export interface PracticeOwner {
   email?: string;
 }
 
+export interface License {
+  _id?: string;
+  type?: string;
+  number?: string;
+  state?: string;
+  issueDate?: string;
+  expirationDate?: string;
+  status?: 'active' | 'expired' | 'pending';
+}
+
+export interface DeaRegistration {
+  _id?: string;
+  number?: string;
+  state?: string;
+  issueDate?: string;
+  expirationDate?: string;
+  status?: 'active' | 'expired' | 'pending';
+}
+
+export interface Provider {
+  _id: string;
+  name: string;
+  providerType?: string;
+  npi?: string;
+  specialty?: string;
+  secondarySpecialty?: string;
+  taxonomy?: string;
+  dob?: string;
+  gender?: string;
+  practiceId: { _id: string; groupName: string; status?: string } | string;
+  contact?: { phone?: string; email?: string };
+  homeAddress?: Address;
+  licenses?: License[];
+  deaRegistrations?: DeaRegistration[];
+  caqh?: {
+    caqhId?: string;
+    lastAttestedDate?: string;
+    nextAttestationDue?: string;
+    status?: 'current' | 'due_soon' | 'overdue' | 'not_linked';
+  };
+  status: 'active' | 'inactive';
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Practice {
   _id: string;
   groupName: string;
