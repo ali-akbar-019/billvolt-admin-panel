@@ -45,6 +45,20 @@ export interface PracticeOwner {
   email?: string;
 }
 
+export interface CredentialingRecord {
+  _id: string;
+  providerId: { _id: string; name: string; npi?: string; practiceId?: { _id: string; groupName: string } } | string;
+  payerName: string;
+  status: CredentialingStatus;
+  submittedDate?: string;
+  approvedDate?: string;
+  expirationDate?: string;
+  assignedTo?: { _id: string; name: string; email: string } | string;
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface License {
   _id?: string;
   type?: string;

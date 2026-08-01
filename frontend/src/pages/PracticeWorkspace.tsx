@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Pencil, Building2, ClipboardCheck, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Building2, ClipboardCheck, FileText, Clock } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { PracticeFormModal } from '../components/PracticeFormModal';
-import type { Practice } from '../types';
+import { CredentialingFormModal } from '../components/CredentialingFormModal';
+import { STATUS_OPTIONS, statusColors } from '../constants/credentialing';
+import type { Practice, CredentialingRecord, CredentialingStatus } from '../types';
 
 type Tab = 'info' | 'payers' | 'documents';
 
@@ -29,6 +31,10 @@ export function PracticeWorkspace() {
   const [tab, setTab] = useState<Tab>('info');
   const [showEdit, setShowEdit] = useState(false);
 
+  const [records, setRecords] = useState<CredentialingRecord[]>([]);
+  const [recordsLoaded, setRecordsLoaded] = useState(false);
+  const [modalRecord, setModalRecord] = useState<CredentialingRecord | null | 'new'>(null);
+
   const fetchPractice = () => {
     if (!id) return;
     setIsLoading(true);
@@ -43,6 +49,35 @@ export function PracticeWorkspace() {
   };
 
   useEffect(fetchPractice, [id]);
+
+  useEffect(() => {
+    if (tab !== 'payers' || recordsLoaded || !id) return;
+    apiClient
+      .get('/credentialing', { params: { practiceId: id, limit: 100 } })
+      .then((res) => setRecords(res.data.records))
+      .catch(() => showToast('Could not load the payer grid', 'error'))
+      .finally(() => setRecordsLoaded(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, id]);
+
+  const handleRecordSaved = (record: CredentialingRecord) => {
+    setRecords((prev) => {
+      const exists = prev.some((r) => r._id === record._id);
+      return exists ? prev.map((r) => (r._id === record._id ? record : r)) : [record, ...prev];
+    });
+  };
+
+  const handleInlineStatusChange = async (record: CredentialingRecord, newStatus: CredentialingStatus) => {
+    const prevRecords = records;
+    setRecords((prev) => prev.map((r) => (r._id === record._id ? { ...r, status: newStatus } : r)));
+    try {
+      const res = await apiClient.patch(`/credentialing/${record._id}`, { status: newStatus });
+      handleRecordSaved(res.data.record);
+    } catch {
+      setRecords(prevRecords);
+      showToast('Could not update status', 'error');
+    }
+  };
 
   if (isLoading) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>Loading practice…</div>;
@@ -147,11 +182,77 @@ export function PracticeWorkspace() {
       )}
 
       {tab === 'payers' && (
-        <EmptyTab
-          icon={ClipboardCheck}
-          title="Payer credentialing grid"
-          description="Track this practice's status across every payer — building this next in Module 2."
-        />
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+            <button onClick={() => setModalRecord('new')} style={addButtonStyle}>
+              <Plus size={15} /> Add payer record
+            </button>
+          </div>
+
+          {!recordsLoaded ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>
+              Loading payer grid…
+            </div>
+          ) : records.length === 0 ? (
+            <EmptyTab
+              icon={ClipboardCheck}
+              title="No payer records yet"
+              description="Add a payer record for one of this practice's providers to start tracking credentialing status."
+            />
+          ) : (
+            <div className="surface-card" style={{ overflow: 'hidden' }}>
+              <div className="table-scroll">
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Payer', 'Provider', 'Status', 'Expiration', 'Updated', ''].map((h) => (
+                        <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {records.map((r) => (
+                      <tr key={r._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '14px 20px', fontWeight: 600 }}>{r.payerName}</td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>
+                          {typeof r.providerId === 'object' ? r.providerId.name : '—'}
+                        </td>
+                        <td style={{ padding: '14px 20px' }}>
+                          <select
+                            value={r.status}
+                            onChange={(e) => handleInlineStatusChange(r, e.target.value as CredentialingStatus)}
+                            style={{ ...payerBadgeStyle, ...statusColors(r.status), border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
+                          >
+                            {STATUS_OPTIONS.map((s) => (
+                              <option key={s.value} value={s.value}>{s.label}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
+                          {r.expirationDate ? new Date(r.expirationDate).toLocaleDateString() : '—'}
+                        </td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
+                          {new Date(r.updatedAt).toLocaleDateString()}
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => setModalRecord(r)}
+                            aria-label={`Edit ${r.payerName} record`}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {tab === 'documents' && (
@@ -167,6 +268,15 @@ export function PracticeWorkspace() {
           practice={practice}
           onClose={() => setShowEdit(false)}
           onSaved={(updated) => setPractice(updated)}
+        />
+      )}
+
+      {modalRecord && (
+        <CredentialingFormModal
+          record={modalRecord === 'new' ? null : modalRecord}
+          practiceId={practice._id}
+          onClose={() => setModalRecord(null)}
+          onSaved={handleRecordSaved}
         />
       )}
     </div>
@@ -215,4 +325,13 @@ const editButtonStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, background: 'var(--bg-surface)', color: 'var(--text-secondary)',
   border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', padding: '10px 16px',
   fontSize: 14, fontWeight: 600, cursor: 'pointer',
+};
+
+const addButtonStyle: React.CSSProperties = {
+  display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
+  border: 'none', borderRadius: 'var(--radius)', padding: '9px 16px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
+};
+
+const payerBadgeStyle: React.CSSProperties = {
+  fontSize: 12.5, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
 };

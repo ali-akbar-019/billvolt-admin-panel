@@ -108,6 +108,13 @@ Provider endpoints (any authenticated user, sensitive fields + delete are admin-
 - `PATCH /api/providers/:id` — update
 - `DELETE /api/providers/:id` — admin only
 
+Credentialing endpoints (any authenticated user, delete is admin-only):
+- `GET /api/credentialing` — list, with `?providerId=`, `?practiceId=` (rolls up all of that practice's providers), `?status=`, `?payerName=`, `?page=`, `?limit=`
+- `GET /api/credentialing/:id` — single record
+- `POST /api/credentialing` — create (requires `providerId` + `payerName`, one record per provider+payer pair)
+- `PATCH /api/credentialing/:id` — update (status changes are audit logged with from/to)
+- `DELETE /api/credentialing/:id` — admin only
+
 ## Roadmap
 
 | Module | Focus |
