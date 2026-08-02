@@ -1,30 +1,14 @@
-import { useEffect, useState } from 'react';
 import { Building2, UserCheck, BellRing } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { apiClient } from '../api/client';
 
-interface Summary {
-  activePractices: number;
-  approvedThisMonth: number;
-  pendingCredentialing: number;
-}
+const STAT_CARDS = [
+  { label: 'Active practices', value: '—', icon: Building2, tint: 'var(--accent-tint)', color: 'var(--accent)' },
+  { label: 'Approved this month', value: '—', icon: UserCheck, tint: 'var(--status-approved-tint)', color: 'var(--status-approved)' },
+  { label: 'Pending follow-ups', value: '—', icon: BellRing, tint: 'var(--status-in-progress-tint)', color: 'var(--status-in-progress)' },
+];
 
 export function Dashboard() {
   const { user } = useAuth();
-  const [summary, setSummary] = useState<Summary | null>(null);
-
-  useEffect(() => {
-    apiClient
-      .get('/dashboard/summary')
-      .then((res) => setSummary(res.data))
-      .catch(() => setSummary(null));
-  }, []);
-
-  const statCards = [
-    { label: 'Active practices', value: summary?.activePractices, icon: Building2, tint: 'var(--accent-tint)', color: 'var(--accent)' },
-    { label: 'Approved this month', value: summary?.approvedThisMonth, icon: UserCheck, tint: 'var(--status-approved-tint)', color: 'var(--status-approved)' },
-    { label: 'Pending credentialing', value: summary?.pendingCredentialing, icon: BellRing, tint: 'var(--status-in-progress-tint)', color: 'var(--status-in-progress)' },
-  ];
 
   return (
     <div>
@@ -36,7 +20,7 @@ export function Dashboard() {
       </p>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 28 }}>
-        {statCards.map(({ label, value, icon: Icon, tint, color }) => (
+        {STAT_CARDS.map(({ label, value, icon: Icon, tint, color }) => (
           <div key={label} className="surface-card surface-card--hoverable" style={{ padding: '22px' }}>
             <div
               style={{
@@ -56,7 +40,7 @@ export function Dashboard() {
               {label}
             </p>
             <p className="tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 600, margin: 0 }}>
-              {value ?? '—'}
+              {value}
             </p>
           </div>
         ))}
@@ -71,7 +55,7 @@ export function Dashboard() {
           fontSize: 'var(--fs-small)',
         }}
       >
-        Reports and trend charts land in Module 3 — the Credentialing Grid already tracks what these numbers roll up from.
+        Charts and live data connect once the Practices and Credentialing modules are built.
       </div>
     </div>
   );

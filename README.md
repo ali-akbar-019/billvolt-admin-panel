@@ -115,9 +115,6 @@ Credentialing endpoints (any authenticated user, delete is admin-only):
 - `PATCH /api/credentialing/:id` — update (status changes are audit logged with from/to)
 - `DELETE /api/credentialing/:id` — admin only
 
-Dashboard endpoint:
-- `GET /api/dashboard/summary` — active practice count, approved-this-month count, pending credentialing count
-
 ## Roadmap
 
 | Module | Focus |
