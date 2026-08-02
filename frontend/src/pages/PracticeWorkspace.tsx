@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Pencil, Plus, Building2, ClipboardCheck, FileText, Clock } from 'lucide-react';
+import { ArrowLeft, Pencil, Plus, Building2, UserRound, ClipboardCheck, FileText, Clock } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { PracticeFormModal } from '../components/PracticeFormModal';
+import { ProviderFormModal } from '../components/ProviderFormModal';
 import { CredentialingFormModal } from '../components/CredentialingFormModal';
 import { STATUS_OPTIONS, statusColors } from '../constants/credentialing';
-import type { Practice, CredentialingRecord, CredentialingStatus } from '../types';
+import type { Practice, Provider, CredentialingRecord, CredentialingStatus } from '../types';
 
-type Tab = 'info' | 'payers' | 'documents';
+type Tab = 'info' | 'providers' | 'payers' | 'documents';
 
 const TABS: { id: Tab; label: string; icon: typeof ClipboardCheck }[] = [
   { id: 'info', label: 'Practice info', icon: Building2 },
+  { id: 'providers', label: 'Providers', icon: UserRound },
   { id: 'payers', label: 'Payer grid', icon: ClipboardCheck },
   { id: 'documents', label: 'Documents', icon: FileText },
 ];
@@ -34,6 +36,10 @@ export function PracticeWorkspace() {
   const [records, setRecords] = useState<CredentialingRecord[]>([]);
   const [recordsLoaded, setRecordsLoaded] = useState(false);
   const [modalRecord, setModalRecord] = useState<CredentialingRecord | null | 'new'>(null);
+
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [providersLoaded, setProvidersLoaded] = useState(false);
+  const [modalProvider, setModalProvider] = useState<Provider | null | 'new'>(null);
 
   const fetchPractice = () => {
     if (!id) return;
@@ -59,6 +65,23 @@ export function PracticeWorkspace() {
       .finally(() => setRecordsLoaded(true));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, id]);
+
+  useEffect(() => {
+    if (tab !== 'providers' || providersLoaded || !id) return;
+    apiClient
+      .get('/providers', { params: { practiceId: id, limit: 100 } })
+      .then((res) => setProviders(res.data.providers))
+      .catch(() => showToast('Could not load providers for this practice', 'error'))
+      .finally(() => setProvidersLoaded(true));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, id]);
+
+  const handleProviderSaved = (provider: Provider) => {
+    setProviders((prev) => {
+      const exists = prev.some((p) => p._id === provider._id);
+      return exists ? prev.map((p) => (p._id === provider._id ? provider : p)) : [provider, ...prev];
+    });
+  };
 
   const handleRecordSaved = (record: CredentialingRecord) => {
     setRecords((prev) => {
@@ -181,6 +204,65 @@ export function PracticeWorkspace() {
         </div>
       )}
 
+      {tab === 'providers' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
+            <button onClick={() => setModalProvider('new')} style={addButtonStyle}>
+              <Plus size={15} /> Add provider
+            </button>
+          </div>
+
+          {!providersLoaded ? (
+            <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>
+              Loading providers…
+            </div>
+          ) : providers.length === 0 ? (
+            <EmptyTab
+              icon={UserRound}
+              title="No providers yet"
+              description="Add the physicians and clinicians who work at this practice."
+            />
+          ) : (
+            <div className="surface-card" style={{ overflow: 'hidden' }}>
+              <div className="table-scroll">
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 560 }}>
+                  <thead>
+                    <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                      {['Name', 'NPI', 'Specialty', 'Status', ''].map((h) => (
+                        <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {providers.map((p) => (
+                      <tr key={p._id} style={{ borderBottom: '1px solid var(--border)' }}>
+                        <td style={{ padding: '14px 20px', fontWeight: 600 }}>{p.name}</td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{p.npi || '—'}</td>
+                        <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{p.specialty || '—'}</td>
+                        <td style={{ padding: '14px 20px' }}>
+                          <span style={{ ...payerBadgeStyle, ...statusBadge(p.status) }}>{p.status}</span>
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                          <button
+                            onClick={() => setModalProvider(p)}
+                            aria-label={`Edit ${p.name}`}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === 'payers' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 14 }}>
@@ -268,6 +350,15 @@ export function PracticeWorkspace() {
           practice={practice}
           onClose={() => setShowEdit(false)}
           onSaved={(updated) => setPractice(updated)}
+        />
+      )}
+
+      {modalProvider && (
+        <ProviderFormModal
+          provider={modalProvider === 'new' ? null : modalProvider}
+          defaultPracticeId={practice._id}
+          onClose={() => setModalProvider(null)}
+          onSaved={handleProviderSaved}
         />
       )}
 
