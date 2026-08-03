@@ -8,6 +8,7 @@ const baseShape = {
   submittedDate: z.coerce.date().optional(),
   approvedDate: z.coerce.date().optional(),
   expirationDate: z.coerce.date().optional(),
+  nextFollowUpDate: z.coerce.date().nullable().optional(),
   assignedTo: z.string().trim().optional(),
   notes: z.string().trim().optional(),
 };

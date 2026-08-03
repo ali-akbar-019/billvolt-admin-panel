@@ -13,6 +13,7 @@ const practiceRoutes = require('./routes/practice.routes');
 const providerRoutes = require('./routes/provider.routes');
 const credentialingRoutes = require('./routes/credentialing.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
+const followUpRoutes = require('./routes/followup.routes');
 
 const app = express();
 
@@ -62,6 +63,7 @@ app.use('/api/practices', practiceRoutes);
 app.use('/api/providers', providerRoutes);
 app.use('/api/credentialing', credentialingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/followups', followUpRoutes);
 
 // --- 404 handler ---
 app.use((req, res) => {

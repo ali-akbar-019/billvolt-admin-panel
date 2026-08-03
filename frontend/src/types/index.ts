@@ -53,6 +53,7 @@ export interface CredentialingRecord {
   submittedDate?: string;
   approvedDate?: string;
   expirationDate?: string;
+  nextFollowUpDate?: string;
   assignedTo?: { _id: string; name: string; email: string } | string;
   notes?: string;
   createdAt: string;

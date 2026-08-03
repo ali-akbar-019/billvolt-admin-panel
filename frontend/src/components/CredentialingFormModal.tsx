@@ -26,6 +26,7 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
   const [status, setStatus] = useState<CredentialingStatus>(record?.status || 'not_started');
   const [submittedDate, setSubmittedDate] = useState(record?.submittedDate?.slice(0, 10) || '');
   const [expirationDate, setExpirationDate] = useState(record?.expirationDate?.slice(0, 10) || '');
+  const [nextFollowUpDate, setNextFollowUpDate] = useState(record?.nextFollowUpDate?.slice(0, 10) || '');
   const [notes, setNotes] = useState(record?.notes || '');
 
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +56,8 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
       status,
       submittedDate: submittedDate || undefined,
       expirationDate: expirationDate || undefined,
+      // Explicit null clears an existing follow-up task; omitted (undefined) leaves it untouched.
+      nextFollowUpDate: nextFollowUpDate || (isEdit && record?.nextFollowUpDate ? null : undefined),
       notes: notes || undefined,
     };
 
@@ -134,6 +137,14 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
               <label style={labelStyle}>Expiration date</label>
               <input type="date" value={expirationDate} onChange={(e) => setExpirationDate(e.target.value)} style={inputStyle} />
             </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>Next follow-up date</label>
+            <input type="date" value={nextFollowUpDate} onChange={(e) => setNextFollowUpDate(e.target.value)} style={inputStyle} />
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
+              Setting this creates a task on the Follow-ups page automatically. Clear it to cancel the task.
+            </p>
           </div>
 
           <div>

@@ -19,6 +19,8 @@ const credentialingRecordSchema = new mongoose.Schema(
     expirationDate: { type: Date },
     assignedTo: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     notes: { type: String, trim: true },
+    // Setting this auto-creates (or reschedules) a FollowUp task — see credentialing.controller.js
+    nextFollowUpDate: { type: Date },
   },
   { timestamps: true }
 );

@@ -1,5 +1,6 @@
 const CredentialingRecord = require('../models/CredentialingRecord.model');
 const Provider = require('../models/Provider.model');
+const FollowUp = require('../models/FollowUp.model');
 const AuditLog = require('../models/AuditLog.model');
 
 const logAudit = (req, action, resourceId, metadata) =>
@@ -11,6 +12,39 @@ const logAudit = (req, action, resourceId, metadata) =>
     metadata,
     ipAddress: req.ip,
   }).catch((err) => console.error('Audit log failed:', err.message));
+
+// Keeps the FollowUp task in sync with a record's nextFollowUpDate:
+//  - date set/changed -> create the task, or push its due date
+//  - date cleared     -> remove the still-pending task (a completed one is left alone)
+const syncFollowUp = async (record, req) => {
+  if (!('nextFollowUpDate' in req.body)) return;
+
+  const existing = await FollowUp.findOne({
+    linkedType: 'CredentialingRecord',
+    linkedId: record._id,
+    status: 'pending',
+  });
+
+  if (!record.nextFollowUpDate) {
+    if (existing) await FollowUp.findByIdAndDelete(existing._id);
+    return;
+  }
+
+  if (existing) {
+    existing.dueDate = record.nextFollowUpDate;
+    await existing.save();
+    return;
+  }
+
+  const provider = await Provider.findById(record.providerId).select('name');
+  await FollowUp.create({
+    title: `Follow up: ${record.payerName}${provider ? ` — ${provider.name}` : ''}`,
+    linkedType: 'CredentialingRecord',
+    linkedId: record._id,
+    dueDate: record.nextFollowUpDate,
+    assignedTo: record.assignedTo || req.user._id,
+  });
+};
 
 // GET /api/credentialing
 // Query params: providerId, practiceId (resolves to that practice's providers), status, payerName, page, limit
@@ -59,6 +93,7 @@ const getRecord = async (req, res) => {
 const createRecord = async (req, res) => {
   try {
     const record = await CredentialingRecord.create(req.body);
+    await syncFollowUp(record, req);
     await logAudit(req, 'create', record._id, { payerName: record.payerName, providerId: record.providerId });
     const populated = await record.populate([
       { path: 'providerId', select: 'name npi practiceId', populate: { path: 'practiceId', select: 'groupName' } },
@@ -84,6 +119,7 @@ const updateRecord = async (req, res) => {
   const previousStatus = record.status;
   Object.assign(record, req.body);
   await record.save();
+  await syncFollowUp(record, req);
 
   await logAudit(req, 'update', record._id, {
     changedFields,

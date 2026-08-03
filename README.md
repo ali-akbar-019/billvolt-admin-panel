@@ -118,6 +118,16 @@ Credentialing endpoints (any authenticated user, delete is admin-only):
 Dashboard endpoint:
 - `GET /api/dashboard/summary` — active practice count, approved-this-month count, pending credentialing count
 
+Follow-up endpoints (any authenticated user, delete is admin-only):
+- `GET /api/followups` — list, with `?bucket=today|upcoming|overdue`, `?status=`, `?assignedTo=`, `?page=`, `?limit=` — overdue items include a `daysOverdue` count
+- `GET /api/followups/counts` — today/overdue/upcoming counts for dashboard badges
+- `GET /api/followups/:id` — single follow-up
+- `POST /api/followups` — create manually (requires `linkedType`, `linkedId`, `dueDate`)
+- `PATCH /api/followups/:id` — reschedule, reassign, or mark complete (`{ "status": "completed" }`)
+- `DELETE /api/followups/:id` — admin only
+
+Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
+
 ## Roadmap
 
 | Module | Focus |
