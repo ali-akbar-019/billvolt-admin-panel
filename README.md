@@ -126,6 +126,11 @@ Follow-up endpoints (any authenticated user, delete is admin-only):
 - `PATCH /api/followups/:id` — reschedule, reassign, or mark complete (`{ "status": "completed" }`)
 - `DELETE /api/followups/:id` — admin only
 
+Timeline endpoints (unlimited chronological log per payer record, entries are otherwise immutable):
+- `GET /api/timeline?credentialingRecordId=` — newest first, no pagination cap
+- `POST /api/timeline` — log a call/email/note against a credentialing record
+- `DELETE /api/timeline/:id` — admin only
+
 Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
 
 ## Roadmap

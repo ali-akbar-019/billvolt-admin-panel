@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { X } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { STATUS_OPTIONS } from '../constants/credentialing';
 import type { CredentialingRecord, Provider, CredentialingStatus } from '../types';
+
+interface TimelineEntry {
+  _id: string;
+  activityType: string;
+  notes: string;
+  createdAt: string;
+  userId?: { _id: string; name: string };
+}
 
 interface CredentialingFormModalProps {
   record?: CredentialingRecord | null;
@@ -31,6 +39,37 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [timeline, setTimeline] = useState<TimelineEntry[]>([]);
+  const [newNote, setNewNote] = useState('');
+  const [isAddingNote, setIsAddingNote] = useState(false);
+
+  useEffect(() => {
+    if (!isEdit || !record) return;
+    apiClient
+      .get('/timeline', { params: { credentialingRecordId: record._id } })
+      .then((res) => setTimeline(res.data.entries))
+      .catch(() => showToast('Could not load the activity timeline', 'error'));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [record?._id]);
+
+  const handleAddNote = async () => {
+    if (!newNote.trim() || !record) return;
+    setIsAddingNote(true);
+    try {
+      const res = await apiClient.post('/timeline', {
+        credentialingRecordId: record._id,
+        activityType: 'note',
+        notes: newNote.trim(),
+      });
+      setTimeline((prev) => [res.data.entry, ...prev]);
+      setNewNote('');
+    } catch {
+      showToast('Could not add that note', 'error');
+    } finally {
+      setIsAddingNote(false);
+    }
+  };
 
   useEffect(() => {
     apiClient
@@ -158,6 +197,47 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
             {isSubmitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add record'}
           </button>
         </form>
+
+        {isEdit && (
+          <div style={{ marginTop: 24, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
+            <p style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '0 0 14px' }}>
+              <Clock size={13} /> Activity timeline
+            </p>
+
+            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+              <input
+                value={newNote}
+                onChange={(e) => setNewNote(e.target.value)}
+                placeholder="Log a call, email, or update…"
+                style={{ ...inputStyle, flex: 1 }}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddNote())}
+              />
+              <button
+                type="button"
+                onClick={handleAddNote}
+                disabled={isAddingNote || !newNote.trim()}
+                style={{ ...buttonStyle(isAddingNote || !newNote.trim()), width: 'auto', padding: '0 16px', marginTop: 0 }}
+              >
+                Log
+              </button>
+            </div>
+
+            {timeline.length === 0 ? (
+              <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>No activity logged yet.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 220, overflowY: 'auto' }}>
+                {timeline.map((entry) => (
+                  <div key={entry._id} style={{ fontSize: 13.5 }}>
+                    <p style={{ margin: '0 0 2px', color: 'var(--text-primary)' }}>{entry.notes}</p>
+                    <p style={{ margin: 0, fontSize: 12, color: 'var(--text-muted)' }}>
+                      {entry.userId?.name || 'Unknown'} · {new Date(entry.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

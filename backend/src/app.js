@@ -14,6 +14,7 @@ const providerRoutes = require('./routes/provider.routes');
 const credentialingRoutes = require('./routes/credentialing.routes');
 const dashboardRoutes = require('./routes/dashboard.routes');
 const followUpRoutes = require('./routes/followup.routes');
+const timelineRoutes = require('./routes/timeline.routes');
 
 const app = express();
 
@@ -64,6 +65,7 @@ app.use('/api/providers', providerRoutes);
 app.use('/api/credentialing', credentialingRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/followups', followUpRoutes);
+app.use('/api/timeline', timelineRoutes);
 
 // --- 404 handler ---
 app.use((req, res) => {
