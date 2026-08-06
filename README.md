@@ -131,6 +131,9 @@ Timeline endpoints (unlimited chronological log per payer record, entries are ot
 - `POST /api/timeline` — log a call/email/note against a credentialing record
 - `DELETE /api/timeline/:id` — admin only
 
+Reports endpoint:
+- `GET /api/reports/summary` — practice/provider totals, credentialing counts by status, top 5 payers by volume
+
 Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
 
 ## Roadmap
