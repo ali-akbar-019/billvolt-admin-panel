@@ -16,6 +16,7 @@ const dashboardRoutes = require('./routes/dashboard.routes');
 const followUpRoutes = require('./routes/followup.routes');
 const timelineRoutes = require('./routes/timeline.routes');
 const reportsRoutes = require('./routes/reports.routes');
+const aiRoutes = require('./routes/ai.routes');
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/followups', followUpRoutes);
 app.use('/api/timeline', timelineRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // --- 404 handler ---
 app.use((req, res) => {

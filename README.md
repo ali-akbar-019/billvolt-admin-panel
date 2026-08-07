@@ -134,6 +134,9 @@ Timeline endpoints (unlimited chronological log per payer record, entries are ot
 Reports endpoint:
 - `GET /api/reports/summary` — practice/provider totals, credentialing counts by status, top 5 payers by volume
 
+AI Assistant endpoint:
+- `POST /api/ai/query` — `{ "question": "..." }`. Handles three intents: provider+payer status ("status for Dr. Khan payer Aetna"), practice-level pending payers ("pending payers for Acme Medical Group"), and today's follow-ups ("what follow-ups are due today"). Ambiguous matches (e.g. two providers with similar names) return a clarifying question instead of guessing. Every query is audit logged with the question and the response given. This is pattern-matching against the database, not a call to an external LLM — no API key is required.
+
 Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
 
 ## Roadmap
