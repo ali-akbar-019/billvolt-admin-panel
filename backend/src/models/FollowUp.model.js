@@ -14,4 +14,7 @@ const followUpSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Matches the exact filter shape used by every follow-ups list/count query
+followUpSchema.index({ status: 1, dueDate: 1 });
+
 module.exports = mongoose.model('FollowUp', followUpSchema);

@@ -1,5 +1,6 @@
 import { LogOut, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { NotificationBell } from './NotificationBell';
 
 interface TopbarProps {
   onMenuClick?: () => void;
@@ -40,6 +41,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto' }}>
+      <NotificationBell />
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <div
           style={{
