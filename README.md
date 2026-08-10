@@ -145,6 +145,18 @@ Settings endpoint (single org-wide settings row, created lazily on first access)
 
 Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
 
+## Testing
+
+```bash
+cd backend
+npm install
+npm test
+```
+
+Runs the Jest + Supertest suite against an in-memory MongoDB — no real
+database or Redis needed. Covers auth flows, Practice CRUD, RBAC enforcement,
+and a regression test for the query-param injection fix in `SECURITY.md`.
+
 ## Roadmap
 
 | Module | Focus |
