@@ -71,7 +71,7 @@ export function SettingsPage() {
             disabled={!isAdmin}
             value={settings.orgName}
             onChange={(e) => setSettings({ ...settings, orgName: e.target.value })}
-            style={inputStyle}
+            className="input-control"
           />
         </div>
 
@@ -81,7 +81,7 @@ export function SettingsPage() {
             disabled={!isAdmin}
             value={settings.timezone}
             onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-            style={inputStyle}
+            className="select-control"
           >
             {TIMEZONES.map((tz) => (
               <option key={tz} value={tz}>{tz}</option>
@@ -96,7 +96,7 @@ export function SettingsPage() {
             type="email"
             value={settings.contactEmail || ''}
             onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-            style={inputStyle}
+            className="input-control"
           />
         </div>
 
@@ -109,7 +109,7 @@ export function SettingsPage() {
             max={480}
             value={settings.sessionTimeoutMinutes}
             onChange={(e) => setSettings({ ...settings, sessionTimeoutMinutes: Number(e.target.value) })}
-            style={inputStyle}
+            className="input-control"
           />
           <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
             Displayed as policy; not yet wired to session expiry enforcement.
@@ -138,13 +138,6 @@ export function SettingsPage() {
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
-  background: 'var(--bg-surface)',
 };
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({

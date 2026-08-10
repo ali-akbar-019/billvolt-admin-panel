@@ -1,32 +1,50 @@
-# React + TypeScript + Vite
+# BillVolt Admin Portal — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+React + TypeScript single-page app (Vite) for the BillVolt Admin Portal.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+React 19, TypeScript, Vite, Tailwind CSS, React Router, Axios, Lucide icons.
 
-## React Compiler
+## Structure
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```
+src/
+├── api/           # Axios client with automatic token refresh
+├── components/    # Shared UI, form modals, layout shell (Sidebar/Topbar)
+├── constants/     # Shared display constants (e.g. credentialing statuses)
+├── context/       # Auth + toast providers
+├── pages/         # One file per route
+├── routes/        # ProtectedRoute (role-aware)
+└── types/         # Shared TypeScript types
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+## Getting started
+
+```bash
+npm install
+cp .env.example .env   # VITE_API_URL defaults to http://localhost:5000/api
+npm run dev            # http://localhost:5173
+```
+
+Point `VITE_API_URL` at the backend and sign in with a seeded account (see the
+root `README.md` for backend setup and `npm run seed:admin`).
+
+## Scripts
+
+| Script | Description |
+|---|---|
+| `npm run dev` | Vite dev server with HMR |
+| `npm run build` | Type-check (`tsc -b`) + production build |
+| `npm run preview` | Preview the production build |
+
+## Notes
+
+- All state is fetched from the backend (`/api/*`) via the shared `apiClient`;
+  there is no session state in `localStorage`.
+- Access tokens live in httpOnly cookies; the response interceptor silently
+  refreshes an expired access token and retries the failed request.
+- Every page is responsive; the sidebar collapses into an off-canvas menu
+  below 900px.
+
+See the root `README.md` and `API_REFERENCE.md` for full details.

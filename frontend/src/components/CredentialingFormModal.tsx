@@ -140,7 +140,7 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelStyle}>Provider *</label>
-            <select required value={providerId} onChange={(e) => setProviderId(e.target.value)} style={inputStyle} disabled={isEdit}>
+            <select required value={providerId} onChange={(e) => setProviderId(e.target.value)} className="select-control" disabled={isEdit}>
               <option value="">Select a provider…</option>
               {providers.map((p) => (
                 <option key={p._id} value={p._id}>{p.name}</option>
@@ -155,12 +155,12 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
 
           <div>
             <label style={labelStyle}>Payer name *</label>
-            <input required value={payerName} onChange={(e) => setPayerName(e.target.value)} style={inputStyle} placeholder="Aetna, BCBS, Medicare…" />
+            <input required value={payerName} onChange={(e) => setPayerName(e.target.value)} className="input-control" placeholder="Aetna, BCBS, Medicare…" />
           </div>
 
           <div>
             <label style={labelStyle}>Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value as CredentialingStatus)} style={inputStyle}>
+            <select value={status} onChange={(e) => setStatus(e.target.value as CredentialingStatus)} className="select-control">
               {STATUS_OPTIONS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
               ))}
@@ -168,19 +168,19 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Submitted date</label>
-              <input type="date" value={submittedDate} onChange={(e) => setSubmittedDate(e.target.value)} style={inputStyle} />
+              <input type="date" value={submittedDate} onChange={(e) => setSubmittedDate(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Expiration date</label>
-              <input type="date" value={expirationDate} onChange={(e) => setExpirationDate(e.target.value)} style={inputStyle} />
+              <input type="date" value={expirationDate} onChange={(e) => setExpirationDate(e.target.value)} className="input-control" />
             </div>
           </div>
 
           <div>
             <label style={labelStyle}>Next follow-up date</label>
-            <input type="date" value={nextFollowUpDate} onChange={(e) => setNextFollowUpDate(e.target.value)} style={inputStyle} />
+            <input type="date" value={nextFollowUpDate} onChange={(e) => setNextFollowUpDate(e.target.value)} className="input-control" />
             <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
               Setting this creates a task on the Follow-ups page automatically. Clear it to cancel the task.
             </p>
@@ -188,7 +188,7 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
 
           <div>
             <label style={labelStyle}>Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-control" style={{ minHeight: 70, resize: 'vertical' }} />
           </div>
 
           {error && <p style={{ fontSize: 13.5, color: 'var(--status-denied)', margin: 0 }}>{error}</p>}
@@ -209,7 +209,8 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
                 value={newNote}
                 onChange={(e) => setNewNote(e.target.value)}
                 placeholder="Log a call, email, or update…"
-                style={{ ...inputStyle, flex: 1 }}
+                className="input-control"
+                style={{ flex: 1 }}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddNote())}
               />
               <button
@@ -225,7 +226,7 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
             {timeline.length === 0 ? (
               <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>No activity logged yet.</p>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 220, overflowY: 'auto' }}>
+              <div className="chat-scroll" style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 220, overflowY: 'auto' }}>
                 {timeline.map((entry) => (
                   <div key={entry._id} style={{ fontSize: 13.5 }}>
                     <p style={{ margin: '0 0 2px', color: 'var(--text-primary)' }}>{entry.notes}</p>
@@ -243,16 +244,10 @@ export function CredentialingFormModal({ record, practiceId, defaultProviderId, 
   );
 }
 
-const rowStyle: React.CSSProperties = { display: 'flex', gap: 12 };
+const rowStyle: React.CSSProperties = { display: 'flex', gap: 12, flexWrap: 'wrap' };
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
 };
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({

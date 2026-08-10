@@ -305,6 +305,7 @@ export function PracticeWorkspace() {
                           <select
                             value={r.status}
                             onChange={(e) => handleInlineStatusChange(r, e.target.value as CredentialingStatus)}
+                            className="status-select"
                             style={{ ...payerBadgeStyle, ...statusColors(r.status), border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
                           >
                             {STATUS_OPTIONS.map((s) => (

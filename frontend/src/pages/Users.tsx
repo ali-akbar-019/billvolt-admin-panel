@@ -111,6 +111,7 @@ export function Users() {
                       value={u.role}
                       disabled={u._id === currentUser?._id || busyId === u._id}
                       onChange={(e) => updateUser(u._id, { role: e.target.value as User['role'] })}
+                      className="status-select"
                       style={{ ...badgeStyle, ...roleBadge(u.role), border: 'none', cursor: 'pointer' }}
                     >
                       <option value="staff">Staff</option>

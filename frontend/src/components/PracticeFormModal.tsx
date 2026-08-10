@@ -96,17 +96,17 @@ export function PracticeFormModal({ practice, onClose, onSaved }: PracticeFormMo
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelStyle}>Group name *</label>
-            <input required value={groupName} onChange={(e) => setGroupName(e.target.value)} style={inputStyle} placeholder="Acme Medical Group" />
+            <input required value={groupName} onChange={(e) => setGroupName(e.target.value)} className="input-control" placeholder="Acme Medical Group" />
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>DBA name</label>
-              <input value={dbaName} onChange={(e) => setDbaName(e.target.value)} style={inputStyle} />
+              <input value={dbaName} onChange={(e) => setDbaName(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>Org type</label>
-              <select value={orgType} onChange={(e) => setOrgType(e.target.value)} style={inputStyle}>
+              <select value={orgType} onChange={(e) => setOrgType(e.target.value)} className="select-control">
                 <option value="">Select…</option>
                 {ORG_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
@@ -116,50 +116,50 @@ export function PracticeFormModal({ practice, onClose, onSaved }: PracticeFormMo
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>Group NPI</label>
-              <input value={groupNpi} onChange={(e) => setGroupNpi(e.target.value)} style={inputStyle} />
+              <input value={groupNpi} onChange={(e) => setGroupNpi(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>Tax ID / EIN</label>
-              <input value={taxId} onChange={(e) => setTaxId(e.target.value)} style={inputStyle} />
+              <input value={taxId} onChange={(e) => setTaxId(e.target.value)} className="input-control" />
             </div>
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>Phone</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 220px' }}>
               <label style={labelStyle}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-control" />
             </div>
           </div>
 
           <div>
             <label style={labelStyle}>Primary location — street</label>
-            <input value={street} onChange={(e) => setStreet(e.target.value)} style={inputStyle} />
+            <input value={street} onChange={(e) => setStreet(e.target.value)} className="input-control" />
           </div>
           <div style={rowStyle}>
-            <div style={{ flex: 2 }}>
+            <div style={{ flex: '2 1 200px' }}>
               <label style={labelStyle}>City</label>
-              <input value={city} onChange={(e) => setCity(e.target.value)} style={inputStyle} />
+              <input value={city} onChange={(e) => setCity(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 120px' }}>
               <label style={labelStyle}>State</label>
-              <input value={state} onChange={(e) => setState(e.target.value)} style={inputStyle} />
+              <input value={state} onChange={(e) => setState(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 120px' }}>
               <label style={labelStyle}>ZIP</label>
-              <input value={zip} onChange={(e) => setZip(e.target.value)} style={inputStyle} />
+              <input value={zip} onChange={(e) => setZip(e.target.value)} className="input-control" />
             </div>
           </div>
 
           {isEdit && (
             <div>
               <label style={labelStyle}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')} style={inputStyle}>
+              <select value={status} onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')} className="select-control">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
@@ -168,7 +168,7 @@ export function PracticeFormModal({ practice, onClose, onSaved }: PracticeFormMo
 
           <div>
             <label style={labelStyle}>Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} />
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} className="input-control" style={{ minHeight: 70, resize: 'vertical' }} />
           </div>
 
           {error && <p style={{ fontSize: 13.5, color: 'var(--status-denied)', margin: 0 }}>{error}</p>}
@@ -182,16 +182,10 @@ export function PracticeFormModal({ practice, onClose, onSaved }: PracticeFormMo
   );
 }
 
-const rowStyle: React.CSSProperties = { display: 'flex', gap: 12 };
+const rowStyle: React.CSSProperties = { display: 'flex', gap: 12, flexWrap: 'wrap' };
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
 };
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({

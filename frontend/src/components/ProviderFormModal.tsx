@@ -101,12 +101,12 @@ export function ProviderFormModal({ provider, defaultPracticeId, onClose, onSave
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div>
             <label style={labelStyle}>Full name *</label>
-            <input required value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} placeholder="Dr. Sarah Khan" />
+            <input required value={name} onChange={(e) => setName(e.target.value)} className="input-control" placeholder="Dr. Sarah Khan" />
           </div>
 
           <div>
             <label style={labelStyle}>Practice *</label>
-            <select required value={practiceId} onChange={(e) => setPracticeId(e.target.value)} style={inputStyle}>
+            <select required value={practiceId} onChange={(e) => setPracticeId(e.target.value)} className="select-control">
               <option value="">Select a practice…</option>
               {practices.map((p) => (
                 <option key={p._id} value={p._id}>{p.groupName}</option>
@@ -120,41 +120,41 @@ export function ProviderFormModal({ provider, defaultPracticeId, onClose, onSave
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Provider type</label>
-              <select value={providerType} onChange={(e) => setProviderType(e.target.value)} style={inputStyle}>
+              <select value={providerType} onChange={(e) => setProviderType(e.target.value)} className="select-control">
                 <option value="">Select…</option>
                 {PROVIDER_TYPES.map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Individual NPI</label>
-              <input value={npi} onChange={(e) => setNpi(e.target.value)} style={inputStyle} />
+              <input value={npi} onChange={(e) => setNpi(e.target.value)} className="input-control" />
             </div>
           </div>
 
           <div>
             <label style={labelStyle}>Specialty</label>
-            <input value={specialty} onChange={(e) => setSpecialty(e.target.value)} style={inputStyle} placeholder="Internal Medicine" />
+            <input value={specialty} onChange={(e) => setSpecialty(e.target.value)} className="input-control" placeholder="Internal Medicine" />
           </div>
 
           <div style={rowStyle}>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Phone</label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} style={inputStyle} />
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input-control" />
             </div>
-            <div style={{ flex: 1 }}>
+            <div style={{ flex: '1 1 200px' }}>
               <label style={labelStyle}>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input-control" />
             </div>
           </div>
 
           {isEdit && (
             <div>
               <label style={labelStyle}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')} style={inputStyle}>
+              <select value={status} onChange={(e) => setStatus(e.target.value as 'active' | 'inactive')} className="select-control">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
@@ -162,7 +162,7 @@ export function ProviderFormModal({ provider, defaultPracticeId, onClose, onSave
           )}
 
           <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>
-            Licenses, DEA registrations, SSN, and CAQH credentials are added from the provider's own page once it's built.
+            Licenses, DEA registrations, SSN, and CAQH credentials can be viewed on the provider's own page.
           </p>
 
           {error && <p style={{ fontSize: 13.5, color: 'var(--status-denied)', margin: 0 }}>{error}</p>}
@@ -176,16 +176,10 @@ export function ProviderFormModal({ provider, defaultPracticeId, onClose, onSave
   );
 }
 
-const rowStyle: React.CSSProperties = { display: 'flex', gap: 12 };
+const rowStyle: React.CSSProperties = { display: 'flex', gap: 12, flexWrap: 'wrap' };
 
 const labelStyle: React.CSSProperties = {
   display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
-};
-
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
 };
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({

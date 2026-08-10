@@ -41,15 +41,13 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, background: 'rgba(16,22,43,0.35)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: 16,
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'var(--bg-surface)', borderRadius: 'var(--radius-card)',
-          boxShadow: 'var(--shadow-card)', width: 360, padding: 24,
-        }}
+        className="surface-card"
+        style={{ width: 380, maxWidth: '100%', maxHeight: '90vh', overflowY: 'auto', padding: 24 }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
           <h2 style={{ fontSize: 18, margin: 0 }}>Add team member</h2>
@@ -59,13 +57,25 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <input required placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} style={inputStyle} />
-          <input required type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} style={inputStyle} />
-          <input required type="password" placeholder="Temporary password" value={password} onChange={(e) => setPassword(e.target.value)} style={inputStyle} />
-          <select value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'staff')} style={inputStyle}>
-            <option value="staff">Staff</option>
-            <option value="admin">Admin</option>
-          </select>
+          <div>
+            <label style={labelStyle}>Full name *</label>
+            <input required placeholder="Jordan Reyes" value={name} onChange={(e) => setName(e.target.value)} className="input-control" />
+          </div>
+          <div>
+            <label style={labelStyle}>Email *</label>
+            <input required type="email" placeholder="name@billvolt.com" value={email} onChange={(e) => setEmail(e.target.value)} className="input-control" />
+          </div>
+          <div>
+            <label style={labelStyle}>Temporary password *</label>
+            <input required type="password" placeholder="Set a temporary password" value={password} onChange={(e) => setPassword(e.target.value)} className="input-control" />
+          </div>
+          <div>
+            <label style={labelStyle}>Role</label>
+            <select value={role} onChange={(e) => setRole(e.target.value as 'admin' | 'staff')} className="select-control" style={{ width: '100%' }}>
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
 
           {error && <p style={{ fontSize: 13, color: 'var(--status-denied)', margin: 0 }}>{error}</p>}
 
@@ -78,14 +88,12 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
   );
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
+const labelStyle: React.CSSProperties = {
+  display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
 };
 
 const buttonStyle = (disabled: boolean): React.CSSProperties => ({
-  width: '100%', padding: '11px', fontSize: 14, fontWeight: 500, color: '#fff',
+  width: '100%', padding: '11px', fontSize: 14, fontWeight: 600, color: '#fff',
   background: disabled ? 'var(--text-muted)' : 'var(--accent)', border: 'none',
   borderRadius: 'var(--radius)', cursor: disabled ? 'not-allowed' : 'pointer', marginTop: 4,
 });

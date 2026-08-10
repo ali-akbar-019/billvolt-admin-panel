@@ -8,6 +8,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Practices } from './pages/Practices'
 import { PracticeWorkspace } from './pages/PracticeWorkspace'
 import { Providers } from './pages/Providers'
+import { ProviderWorkspace } from './pages/ProviderWorkspace'
 import { CredentialingGrid } from './pages/CredentialingGrid'
 import { FollowUps } from './pages/FollowUps'
 import { Reports } from './pages/Reports'
@@ -34,6 +35,7 @@ function App() {
             <Route path="/practices" element={<Practices />} />
             <Route path="/practices/:id" element={<PracticeWorkspace />} />
             <Route path="/providers" element={<Providers />} />
+            <Route path="/providers/:id" element={<ProviderWorkspace />} />
             <Route path="/credentialing" element={<CredentialingGrid />} />
             <Route path="/follow-ups" element={<FollowUps />} />
             <Route path="/reports" element={<Reports />} />

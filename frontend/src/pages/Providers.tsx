@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, UserRound, Pencil } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Plus, Search, ChevronLeft, ChevronRight, UserRound, Pencil, ArrowUpRight } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { ProviderFormModal } from '../components/ProviderFormModal';
@@ -78,10 +79,11 @@ export function Providers() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by name, NPI, or specialty…"
-            style={{ ...searchInputStyle, paddingLeft: 36 }}
+            className="input-control"
+            style={{ paddingLeft: 36 }}
           />
         </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={selectStyle}>
+        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="select-control" style={{ width: 180 }}>
           <option value="">All statuses</option>
           <option value="active">Active</option>
           <option value="inactive">Inactive</option>
@@ -115,8 +117,22 @@ export function Providers() {
               </thead>
               <tbody>
                 {providers.map((p) => (
-                  <tr key={p._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 20px', fontWeight: 600 }}>{p.name}</td>
+                  <tr
+                    key={p._id}
+                    className="row-link"
+                    onClick={() => navigate(`/providers/${p._id}`)}
+                    style={{ borderBottom: '1px solid var(--border)' }}
+                  >
+                    <td style={{ padding: '14px 20px', fontWeight: 600 }}>
+                      <Link
+                        to={`/providers/${p._id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        style={{ color: 'var(--text-primary)', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                      >
+                        {p.name}
+                        <ArrowUpRight size={14} style={{ color: 'var(--text-muted)' }} />
+                      </Link>
+                    </td>
                     <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{p.npi || '—'}</td>
                     <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{p.specialty || '—'}</td>
                     <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{practiceName(p)}</td>
@@ -128,7 +144,7 @@ export function Providers() {
                     </td>
                     <td style={{ padding: '14px 20px', textAlign: 'right' }}>
                       <button
-                        onClick={() => setModalProvider(p)}
+                        onClick={(e) => { e.stopPropagation(); setModalProvider(p); }}
                         aria-label={`Edit ${p.name}`}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
                       >
@@ -169,18 +185,6 @@ export function Providers() {
 const primaryButtonStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
   border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
-};
-
-const searchInputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
-};
-
-const selectStyle: React.CSSProperties = {
-  padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', background: 'var(--bg-surface)', cursor: 'pointer',
 };
 
 const pagerButtonStyle = (disabled: boolean): React.CSSProperties => ({

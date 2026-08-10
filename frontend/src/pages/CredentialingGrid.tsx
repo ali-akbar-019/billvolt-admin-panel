@@ -88,10 +88,11 @@ export function CredentialingGrid() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by payer name…"
-            style={{ ...searchInputStyle, paddingLeft: 36 }}
+            className="input-control"
+            style={{ paddingLeft: 36 }}
           />
         </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={selectStyle}>
+        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="select-control" style={{ width: 180 }}>
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map((s) => (
             <option key={s.value} value={s.value}>{s.label}</option>
@@ -134,6 +135,7 @@ export function CredentialingGrid() {
                       <select
                         value={r.status}
                         onChange={(e) => handleInlineStatusChange(r, e.target.value as CredentialingStatus)}
+                        className="status-select"
                         style={{ ...badgeStyle, ...statusColors(r.status), border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
                       >
                         {STATUS_OPTIONS.map((s) => (
@@ -190,18 +192,6 @@ export function CredentialingGrid() {
 const primaryButtonStyle: React.CSSProperties = {
   display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
   border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
-};
-
-const searchInputStyle: React.CSSProperties = {
-  width: '100%', padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', boxSizing: 'border-box',
-};
-
-const selectStyle: React.CSSProperties = {
-  padding: '10px 12px', fontSize: 14.5,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)',
-  outline: 'none', fontFamily: 'var(--font-body)', background: 'var(--bg-surface)', cursor: 'pointer',
 };
 
 const pagerButtonStyle = (disabled: boolean): React.CSSProperties => ({

@@ -77,7 +77,7 @@ after login — see `frontend/src/api/client.ts`).
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| GET | `/dashboard/summary` | authenticated | Active practice count, approved-this-month count, pending credentialing count. |
+| GET | `/dashboard/summary` | authenticated | Stat totals (active practices, approved-this-month, pending credentialing) plus provider totals, follow-up counts (overdue/due today/upcoming/completed), credentialing breakdown by status, 6-month activity trend, and top 5 payers by volume. Powers every Dashboard card and chart. |
 | GET | `/reports/summary` | authenticated | Practice/provider totals, credentialing by status, top 5 payers by volume. |
 
 ## AI Assistant

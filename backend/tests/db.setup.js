@@ -4,7 +4,16 @@ const { MongoMemoryServer } = require('mongodb-memory-server');
 let mongoServer;
 
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryServer.create({
+    instance: {
+      // Explicit storage engine (vs. the ephemeralForTest default) so the
+      // in-memory server starts on MongoDB 7+ binaries, where that engine no
+      // longer exists, and on older 6.x binaries alike.
+      storageEngine: 'wiredTiger',
+      // wiredTiger snapshots + slower disks can take a while on first start.
+      launchTimeout: 60000,
+    },
+  });
   await mongoose.connect(mongoServer.getUri());
 });
 
