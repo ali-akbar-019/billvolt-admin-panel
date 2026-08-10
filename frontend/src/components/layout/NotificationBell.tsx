@@ -18,7 +18,7 @@ export function NotificationBell() {
   const ref = useRef<HTMLDivElement>(null);
 
   const refreshCount = () => {
-    apiClient.get('/followups/counts').then((res) => setCount((res.data.today || 0) + (res.data.overdue || 0))).catch(() => {});
+    apiClient.get('/followups/counts').then((res) => setCount((res.data.today || 0) + (res.data.overdue || 0))).catch(() => { });
   };
 
   useEffect(() => {

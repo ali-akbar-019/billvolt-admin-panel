@@ -91,61 +91,61 @@ export function Users() {
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading users…</div>
         ) : (
           <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                {['Name', 'Email', 'Role', 'Status', 'Last login', ''].map((h) => (
-                  <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u._id} style={{ borderBottom: '1px solid var(--border)', opacity: busyId === u._id ? 0.5 : 1 }}>
-                  <td style={{ padding: '14px 20px', fontWeight: 500 }}>{u.name}</td>
-                  <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{u.email}</td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <select
-                      value={u.role}
-                      disabled={u._id === currentUser?._id || busyId === u._id}
-                      onChange={(e) => updateUser(u._id, { role: e.target.value as User['role'] })}
-                      className="status-select"
-                      style={{ ...badgeStyle, ...roleBadge(u.role), border: 'none', cursor: 'pointer' }}
-                    >
-                      <option value="staff">Staff</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </td>
-                  <td style={{ padding: '14px 20px' }}>
-                    <button
-                      disabled={u._id === currentUser?._id || busyId === u._id}
-                      onClick={() => updateUser(u._id, { status: u.status === 'active' ? 'disabled' : 'active' })}
-                      style={{ ...badgeStyle, ...statusBadge(u.status), border: 'none', cursor: u._id === currentUser?._id ? 'default' : 'pointer' }}
-                    >
-                      {u.status}
-                    </button>
-                  </td>
-                  <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
-                    {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : 'Never'}
-                  </td>
-                  <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                    {u._id !== currentUser?._id && (
-                      <button
-                        onClick={() => deleteUser(u._id)}
-                        disabled={busyId === u._id}
-                        aria-label={`Remove ${u.name}`}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--status-denied)', display: 'inline-flex' }}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    )}
-                  </td>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Name', 'Email', 'Role', 'Status', 'Last login', ''].map((h) => (
+                    <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                      {h}
+                    </th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u._id} style={{ borderBottom: '1px solid var(--border)', opacity: busyId === u._id ? 0.5 : 1 }}>
+                    <td style={{ padding: '14px 20px', fontWeight: 500 }}>{u.name}</td>
+                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{u.email}</td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <select
+                        value={u.role}
+                        disabled={u._id === currentUser?._id || busyId === u._id}
+                        onChange={(e) => updateUser(u._id, { role: e.target.value as User['role'] })}
+                        className="status-select"
+                        style={{ ...badgeStyle, ...roleBadge(u.role), border: 'none', cursor: 'pointer' }}
+                      >
+                        <option value="staff">Staff</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      <button
+                        disabled={u._id === currentUser?._id || busyId === u._id}
+                        onClick={() => updateUser(u._id, { status: u.status === 'active' ? 'disabled' : 'active' })}
+                        style={{ ...badgeStyle, ...statusBadge(u.status), border: 'none', cursor: u._id === currentUser?._id ? 'default' : 'pointer' }}
+                      >
+                        {u.status}
+                      </button>
+                    </td>
+                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
+                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : 'Never'}
+                    </td>
+                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
+                      {u._id !== currentUser?._id && (
+                        <button
+                          onClick={() => deleteUser(u._id)}
+                          disabled={busyId === u._id}
+                          aria-label={`Remove ${u.name}`}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--status-denied)', display: 'inline-flex' }}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

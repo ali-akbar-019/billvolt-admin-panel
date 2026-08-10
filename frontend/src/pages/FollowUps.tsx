@@ -33,7 +33,7 @@ export function FollowUps() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCounts = () => {
-    apiClient.get('/followups/counts').then((res) => setCounts(res.data)).catch(() => {});
+    apiClient.get('/followups/counts').then((res) => setCounts(res.data)).catch(() => { });
   };
 
   const fetchItems = () => {

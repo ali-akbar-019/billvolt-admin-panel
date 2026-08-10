@@ -133,7 +133,7 @@ export function ProviderWorkspace() {
           </div>
           <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
             {[provider.providerType && `Type ${provider.providerType}`, provider.npi && `NPI ${provider.npi}`,
-              provider.specialty && provider.specialty, practiceName !== '—' && `at ${practiceName}`]
+            provider.specialty && provider.specialty, practiceName !== '—' && `at ${practiceName}`]
               .filter(Boolean)
               .join(' · ') || 'No identifiers on file'}
           </p>

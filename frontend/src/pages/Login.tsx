@@ -1,13 +1,18 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, ClipboardCheck, BellRing, Lock, Mail, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { ShieldCheck, ClipboardCheck, BellRing, Lock, Mail, Eye, EyeOff, Loader2, KeyRound } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const FEATURES = [
   { icon: ClipboardCheck, title: 'Credentialing at a glance', text: 'Track payer records and statuses across every practice and provider.' },
   { icon: BellRing, title: 'Never miss a follow-up', text: 'Overdue and upcoming tasks surface automatically from credentialing dates.' },
   { icon: ShieldCheck, title: 'Secure by default', text: 'Encrypted sensitive data, role-based access, and a full audit trail.' },
+];
+
+const DEMO_ACCOUNTS = [
+  { label: 'Admin', email: 'admin@billvolt.com', password: 'Admin@12345' },
+  { label: 'Staff', email: 'sarah.mitchell@billvolt.com', password: 'Staff@12345' },
 ];
 
 export function Login() {
@@ -18,6 +23,12 @@ export function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const fillDemo = (demoEmail: string, demoPassword: string) => {
+    setEmail(demoEmail);
+    setPassword(demoPassword);
+    setError(null);
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -37,17 +48,15 @@ export function Login() {
   return (
     <div className="auth-page">
       {/* Brand panel */}
-      <div className="auth-brand">
+      <aside className="auth-brand">
         <div className="auth-brand-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
+          <div className="auth-wordmark">
             <div className="auth-logo">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M13 2 4.5 13h5L10 22l8.5-11h-5L13 2Z" fill="currentColor" />
               </svg>
             </div>
-            <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 22, color: '#fff', letterSpacing: '-0.01em' }}>
-              billvolt
-            </span>
+            <span className="auth-wordmark-name">billvolt</span>
           </div>
 
           <h1 className="auth-brand-title">
@@ -70,11 +79,16 @@ export function Login() {
               </div>
             ))}
           </div>
+
+          <div className="auth-brand-footer">
+            <span className="auth-brand-dot" aria-hidden="true" />
+            Secure, encrypted, and fully audited.
+          </div>
         </div>
-      </div>
+      </aside>
 
       {/* Sign-in panel */}
-      <div className="auth-form-side">
+      <main className="auth-form-side">
         <div className="auth-form-wrap">
           <div className="auth-mobile-brand">
             <div className="auth-mobile-logo">
@@ -86,14 +100,12 @@ export function Login() {
           </div>
 
           <div className="surface-card auth-card">
-            <h2 style={{ fontSize: 26, margin: '0 0 6px', fontFamily: 'var(--font-display)' }}>Sign in</h2>
-            <p style={{ fontSize: 15, color: 'var(--text-secondary)', margin: '0 0 28px' }}>
-              Admin portal access for BillVolt staff.
-            </p>
+            <h2 className="auth-card-title">Sign in</h2>
+            <p className="auth-card-sub">Welcome back — access the admin portal.</p>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 18 }} noValidate>
+            <form onSubmit={handleSubmit} className="auth-form" noValidate>
               <div>
-                <label htmlFor="email" style={labelStyle}>
+                <label htmlFor="email" className="auth-label">
                   Email address
                 </label>
                 <div className="auth-input-wrap">
@@ -112,7 +124,7 @@ export function Login() {
               </div>
 
               <div>
-                <label htmlFor="password" style={labelStyle}>
+                <label htmlFor="password" className="auth-label">
                   Password
                 </label>
                 <div className="auth-input-wrap">
@@ -139,16 +151,32 @@ export function Login() {
               </div>
 
               {error && (
-                <div
-                  role="alert"
-                  style={{
-                    fontSize: 13, color: 'var(--status-denied)', background: 'var(--status-denied-tint)',
-                    borderRadius: 'var(--radius)', padding: '10px 12px', margin: 0,
-                  }}
-                >
+                <div role="alert" className="auth-error">
                   {error}
                 </div>
               )}
+
+              <div className="auth-demo">
+                <p className="auth-demo-label">
+                  <KeyRound size={12} />
+                  Demo access — tap to fill
+                </p>
+                {DEMO_ACCOUNTS.map((account) => (
+                  <div key={account.email} className="auth-demo-row">
+                    <div className="auth-demo-creds">
+                      <span className="auth-demo-tag">{account.label}</span>
+                      <span className="auth-demo-email">{account.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="auth-demo-fill"
+                      onClick={() => fillDemo(account.email, account.password)}
+                    >
+                      Use
+                    </button>
+                  </div>
+                ))}
+              </div>
 
               <button type="submit" disabled={isSubmitting} className="auth-submit">
                 {isSubmitting ? (
@@ -161,20 +189,12 @@ export function Login() {
               </button>
             </form>
 
-            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '22px 0 0', textAlign: 'center', lineHeight: 1.6 }}>
+            <p className="auth-helper">
               Having trouble? Ask an administrator to reset your access.
             </p>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block',
-  fontSize: 13,
-  fontWeight: 600,
-  color: 'var(--text-secondary)',
-  marginBottom: 7,
-};

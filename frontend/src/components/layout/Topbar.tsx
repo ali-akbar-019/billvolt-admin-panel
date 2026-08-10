@@ -41,46 +41,46 @@ export function Topbar({ onMenuClick }: TopbarProps) {
       </button>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto' }}>
-      <NotificationBell />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div
+        <NotificationBell />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: 'var(--accent-tint)',
+              color: 'var(--accent)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 14,
+              fontWeight: 600,
+            }}
+          >
+            {initials}
+          </div>
+          <div style={{ lineHeight: 1.3 }}>
+            <p style={{ fontSize: 14.5, fontWeight: 600, margin: 0 }}>{user?.name}</p>
+            <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>
+              {user?.role}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => logout()}
+          aria-label="Log out"
           style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: 'var(--accent-tint)',
-            color: 'var(--accent)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius)',
+            background: 'transparent',
+            padding: '7px 9px',
+            cursor: 'pointer',
+            color: 'var(--text-secondary)',
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 14,
-            fontWeight: 600,
           }}
         >
-          {initials}
-        </div>
-        <div style={{ lineHeight: 1.3 }}>
-          <p style={{ fontSize: 14.5, fontWeight: 600, margin: 0 }}>{user?.name}</p>
-          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>
-            {user?.role}
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={() => logout()}
-        aria-label="Log out"
-        style={{
-          border: '1px solid var(--border)',
-          borderRadius: 'var(--radius)',
-          background: 'transparent',
-          padding: '7px 9px',
-          cursor: 'pointer',
-          color: 'var(--text-secondary)',
-          display: 'flex',
-        }}
-      >
-        <LogOut size={16} />
-      </button>
+          <LogOut size={16} />
+        </button>
       </div>
     </header>
   );

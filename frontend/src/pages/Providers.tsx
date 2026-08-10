@@ -16,6 +16,7 @@ const badgeStyle: React.CSSProperties = {
 };
 
 export function Providers() {
+  const navigate = useNavigate();
   const { showToast } = useToast();
   const [providers, setProviders] = useState<Provider[]>([]);
   const [isLoading, setIsLoading] = useState(true);
