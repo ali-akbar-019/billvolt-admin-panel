@@ -139,6 +139,10 @@ AI Assistant endpoint:
 
 The topbar's notification bell polls `/api/followups/counts` every 60s and shows overdue + due-today follow-ups in a dropdown.
 
+Settings endpoint (single org-wide settings row, created lazily on first access):
+- `GET /api/settings` — any authenticated user
+- `PATCH /api/settings` — admin only (`orgName`, `timezone`, `contactEmail`, `sessionTimeoutMinutes`, `notifyOnOverdueFollowUps`)
+
 Note: setting `nextFollowUpDate` on a credentialing record (`PATCH /api/credentialing/:id`) automatically creates or reschedules its linked follow-up task; clearing the date removes the pending task.
 
 ## Roadmap

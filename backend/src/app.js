@@ -17,6 +17,7 @@ const followUpRoutes = require('./routes/followup.routes');
 const timelineRoutes = require('./routes/timeline.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const aiRoutes = require('./routes/ai.routes');
+const orgSettingsRoutes = require('./routes/orgSettings.routes');
 
 const app = express();
 
@@ -70,6 +71,7 @@ app.use('/api/followups', followUpRoutes);
 app.use('/api/timeline', timelineRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/settings', orgSettingsRoutes);
 
 // --- 404 handler ---
 app.use((req, res) => {
