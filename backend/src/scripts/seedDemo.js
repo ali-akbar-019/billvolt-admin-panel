@@ -422,6 +422,20 @@ const run = async () => {
   const practiceDocs = await Practice.create(PRACTICES);
   console.log(`[seed] ${practiceDocs.length} practices created.`);
 
+  // FR-001: distribute the practices across the demo staff so each user only
+  // sees a subset (Sarah: 0-1, James: 2-3, Priya: 4). Existing users keep any
+  // assignments they already have.
+  await Promise.all(
+    staff.map((user, i) => {
+      const assigned = practiceDocs
+        .filter((_, p) => p % staff.length === i)
+        .map((p) => p._id);
+      if (assigned.length === 0) return Promise.resolve();
+      return User.findByIdAndUpdate(user._id, { $addToSet: { assignedPracticeIds: { $each: assigned } } });
+    })
+  );
+  console.log('[seed] Demo staff practice assignments applied.');
+
   // Providers
   const providerDocs = [];
   for (const def of PROVIDER_DEFS) {

@@ -74,6 +74,10 @@ states, BillVolt keeps every provider, payer, and follow-up current and auditabl
   (`frontend/src/api/client.ts`) and login rate limiting.
 - Role-based access: `admin` and `staff`. User management (create, change role,
   enable/disable, delete) is admin-only; staff never see admin menu items.
+- Per-practice scoping (FR-001): staff only see the practices an admin assigns
+  to them (via the User management screen). That scope applies everywhere —
+  practices, providers, credentialing, follow-ups, timeline, dashboard,
+  reports, and AI answers. Admins always see everything.
 
 **Practices** (`/practices`)
 - Full CRUD with search (name, DBA, NPI, tax ID) and status filtering.
@@ -196,7 +200,8 @@ billvolt-admin-portal/
 
 ## Data models
 
-- **User** — staff/admin accounts with role-based access.
+- **User** — staff/admin accounts with role-based access and
+  `assignedPracticeIds` (FR-001 per-practice scoping; admins unrestricted).
 - **Practice** — medical practices/clinics; identifiers, contacts, multiple
   service locations, owner, and status.
 - **Provider** — clinician records linked to a practice; licenses, DEA
@@ -417,6 +422,7 @@ Step-by-step instructions: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | 3 | Follow-ups, Timeline, Reports, AI Assistant, notifications, dashboard charts | ✅ Done |
 | 4 | Settings, security audit, testing, deployment config, docs | ✅ Done |
 | 5 | Audit log admin screen, report CSV export, follow-up email notifications | ✅ Done |
+| 6 | FR-001 per-practice user assignment (scoping everywhere + admin UI) | ✅ Done |
 
 Deferred (documented in `PRESENTATION.md`): per-document file storage, archived
 reports with date-range pickers, and SMS follow-up notifications (the email

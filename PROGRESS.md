@@ -96,6 +96,20 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 - [x] `nodemailer` dependency installed; `backend/.env.example` documents the
   SMTP_* vars.
 
+### Per-practice user assignment (FR-001) — Phase 6
+- [x] `User.assignedPracticeIds` — staff see only assigned practices; admins
+  unrestricted (empty assignment = empty lists, not everything).
+- [x] Scoping applied everywhere: `/practices`, `/providers` (+`/sensitive`),
+  `/credentialing`, `/timeline`, `/followups`, `/dashboard/summary`,
+  `/reports/summary` + `/export`, and the AI assistant
+  (`applyPermissionFilter` now real, not a stub).
+- [x] Write access is scoped too: staff can't create/edit records in practices
+  they aren't assigned to; creating a practice auto-assigns it to the creator.
+- [x] Admin UI: User management rows get a practice-assignment picker;
+  Add-user modal has the same for new staff.
+- [x] Assignment changes are audit logged (`PATCH /api/users/:id`).
+- [x] Seed data distributes the 5 practices across the 3 demo staff.
+
 ### Responsive layout (full pass)
 - [x] Sidebar collapses into a mobile drawer ≤900px with backdrop + hamburger.
 - [x] Every page audited and responsive: login, dashboard, reports, follow-ups,
@@ -120,17 +134,22 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 ### Seed data
 - [x] `backend/src/scripts/seedDemo.js` — 5 practices, 16 providers,
   73 credentialing records, 42 follow-ups, 209 timeline entries, staff users,
-  org settings. Loaded into local MongoDB (localhost:27017).
+  org settings. Loaded into local MongoDB (localhost:27017). Staff users get
+  practice assignments (practices are distributed round-robin across the 3
+  demo staff; existing users keep theirs).
 - [x] `backend/src/scripts/seedAdmin.js` — create/reset the admin account; safe
   to re-run.
 
 ### Tests
 - [x] Jest + Supertest + `mongodb-memory-server` (no real DB/Redis needed):
-  `backend/tests/auth.test.js`, `practice.test.js`, `rbac.test.js`.
+  `backend/tests/auth.test.js`, `practice.test.js`, `rbac.test.js`,
+  `scoping.test.js` (24 tests across 4 suites).
 - [x] Coverage: wrong-password/unknown-email rejection, cookie-session login,
   token refresh rotation, logout, practice CRUD + validation + search, staff
   blocked from delete/users/sensitive (403), NoSQL injection attempt, all
-  protected routes reject unauthenticated requests (401).
+  protected routes reject unauthenticated requests (401), and FR-001 scoping
+  (staff lists/dashboard/reports filtered to assigned practices, 403 on
+  unassigned detail/write, admins unaffected).
 - [x] NOTE: no frontend automated tests — frontend QA is the manual checklist in
   `QA_CHECKLIST.md`.
 
@@ -140,6 +159,7 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 
 | Item | Status | Notes |
 |---|---|---|
+| Per-practice user assignment | Done | FR-001 shipped — staff scoped to `assignedPracticeIds` everywhere (see above). |
 | Document repository (file upload & versioning) | Placeholder only | Practice workspace "Documents" tab is a placeholder; W-9s, licenses, payer contracts not stored. Needs storage scope (S3/GridFS) + upload UI. |
 | Archived reports / date-range pickers | Partial | CSV export done (`/api/reports/export` + "Export CSV" button); still no on-screen date-range/archived report picker. |
 | Email / SMS follow-up notifications | Email done | Nodemailer digest for overdue/due-today (console fallback when unconfigured); SMS transport still not built. |

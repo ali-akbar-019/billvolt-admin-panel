@@ -2,6 +2,7 @@ const FollowUp = require('../models/FollowUp.model');
 const AuditLog = require('../models/AuditLog.model');
 const OrgSettings = require('../models/OrgSettings.model');
 const { sendFollowUpDigest } = require('../services/followUpNotify.service');
+const { canAccessRecord, canAccessProvider, canAccessFollowUp, followUpScopeFilter } = require('../utils/scope.util');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -80,7 +81,7 @@ const listFollowUps = async (req, res) => {
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 200);
 
-  const filter = {};
+  const filter = await followUpScopeFilter(req.user);
   if (assignedTo) filter.assignedTo = assignedTo;
   if (status) filter.status = status;
 
@@ -119,11 +120,12 @@ const listFollowUps = async (req, res) => {
 
 // GET /api/followups/counts — quick counts for dashboard badges
 const getCounts = async (req, res) => {
+  const scopeFilter = await followUpScopeFilter(req.user);
   const { start: todayStart, end: todayEnd } = dayBounds();
   const [today, overdue, upcoming] = await Promise.all([
-    FollowUp.countDocuments({ status: 'pending', dueDate: { $gte: todayStart, $lte: todayEnd } }),
-    FollowUp.countDocuments({ status: 'pending', dueDate: { $lt: todayStart } }),
-    FollowUp.countDocuments({ status: 'pending', dueDate: { $gt: todayEnd } }),
+    FollowUp.countDocuments({ ...scopeFilter, status: 'pending', dueDate: { $gte: todayStart, $lte: todayEnd } }),
+    FollowUp.countDocuments({ ...scopeFilter, status: 'pending', dueDate: { $lt: todayStart } }),
+    FollowUp.countDocuments({ ...scopeFilter, status: 'pending', dueDate: { $gt: todayEnd } }),
   ]);
   res.json({ today, overdue, upcoming });
 };
@@ -134,11 +136,26 @@ const getFollowUp = async (req, res) => {
   if (!followUp) {
     return res.status(404).json({ error: 'Follow-up not found' });
   }
+  if (!(await canAccessFollowUp(req.user, followUp))) {
+    return res.status(403).json({ error: 'You do not have access to this follow-up' });
+  }
   res.json({ followUp });
 };
 
 // POST /api/followups — manual creation, tied to a CredentialingRecord or Provider
 const createFollowUp = async (req, res) => {
+  const { linkedType, linkedId } = req.body;
+  if (linkedType === 'CredentialingRecord') {
+    const record = await require('../models/CredentialingRecord.model').findById(linkedId).populate('providerId', 'practiceId');
+    if (!(await canAccessRecord(req.user, record))) {
+      return res.status(403).json({ error: 'You do not have access to this credentialing record' });
+    }
+  } else if (linkedType === 'Provider') {
+    const provider = await require('../models/Provider.model').findById(linkedId).select('practiceId');
+    if (!canAccessProvider(req.user, provider)) {
+      return res.status(403).json({ error: 'You do not have access to this provider' });
+    }
+  }
   const followUp = await FollowUp.create(req.body);
   await logAudit(req, 'create', followUp._id, { title: followUp.title, linkedType: followUp.linkedType });
   const populated = await followUp.populate('assignedTo', 'name email');
@@ -151,6 +168,9 @@ const updateFollowUp = async (req, res) => {
   const followUp = await FollowUp.findById(req.params.id);
   if (!followUp) {
     return res.status(404).json({ error: 'Follow-up not found' });
+  }
+  if (!(await canAccessFollowUp(req.user, followUp))) {
+    return res.status(403).json({ error: 'You do not have access to this follow-up' });
   }
 
   const changedFields = Object.keys(req.body);

@@ -11,6 +11,7 @@
 
 const AuditLog = require('../models/AuditLog.model');
 const search = require('../services/credentialingSearch.service');
+const { canAccessPractice, canAccessProvider, canAccessRecord, canAccessFollowUp } = require('../utils/scope.util');
 
 const logQuery = (req, question, response) =>
   AuditLog.create({
@@ -22,11 +23,26 @@ const logQuery = (req, question, response) =>
     ipAddress: req.ip,
   }).catch((err) => console.error('Audit log failed:', err.message));
 
-// Permission filter — currently a no-op because this build has no per-practice
-// user assignment yet (that's FR-001's future scope). Every result from the
-// search engine passes through here so that filter can be dropped in later
-// without touching the agent or the search engine.
-const applyPermissionFilter = (req, results) => results;
+// FR-001 permission filter: drops any search result the requesting user can't
+// see. Admins pass everything through; staff only keep results that belong to
+// an assigned practice (practices themselves, or providers/records/follow-ups
+// linked into their assigned practices).
+const applyPermissionFilter = async (req, results) => {
+  if (!Array.isArray(results) || req.user.role === 'admin') return results;
+
+  const visible = [];
+  for (const result of results) {
+    const allowed = await (() => {
+      if (result.constructor?.modelName === 'Practice') return canAccessPractice(req.user, result);
+      if (result.constructor?.modelName === 'Provider') return canAccessProvider(req.user, result);
+      if (result.constructor?.modelName === 'CredentialingRecord') return canAccessRecord(req.user, result);
+      if (result.constructor?.modelName === 'FollowUp') return canAccessFollowUp(req.user, result);
+      return true;
+    })();
+    if (allowed) visible.push(result);
+  }
+  return visible;
+};
 
 const wantsFollowUpsToday = (q) => /follow[\s-]?up/.test(q) && /(today|due)/.test(q);
 const wantsPendingForPractice = (q) => /pending/.test(q);
@@ -41,7 +57,7 @@ const askQuestion = async (req, res) => {
 
   // Intent 1: follow-ups due today
   if (wantsFollowUpsToday(q)) {
-    const followUps = applyPermissionFilter(req, await search.findDueTodayFollowUps());
+    const followUps = await applyPermissionFilter(req, await search.findDueTodayFollowUps());
     const response =
       followUps.length === 0
         ? 'Nothing is due today.'
@@ -53,7 +69,7 @@ const askQuestion = async (req, res) => {
 
   // Intent 2: pending payers for a practice — find a practice name mentioned in the question
   if (wantsPendingForPractice(q)) {
-    const practices = applyPermissionFilter(req, await search.findPracticesByName(extractLikelyName(question)));
+    const practices = await applyPermissionFilter(req, await search.findPracticesByName(extractLikelyName(question)));
     if (practices.length === 0) {
       const response = "I couldn't find a practice matching that in your question. Which practice did you mean?";
       await logQuery(req, question, response);
@@ -66,7 +82,7 @@ const askQuestion = async (req, res) => {
     }
 
     const practice = practices[0];
-    const records = applyPermissionFilter(req, await search.findPendingRecordsForPractice(practice._id));
+    const records = await applyPermissionFilter(req, await search.findPendingRecordsForPractice(practice._id));
     const response =
       records.length === 0
         ? `${practice.groupName} has no pending payer applications right now.`
@@ -78,7 +94,7 @@ const askQuestion = async (req, res) => {
 
   // Intent 3: provider + payer status lookup — find any provider name mentioned in the question
   const providerFragment = extractLikelyName(question);
-  const providers = applyPermissionFilter(req, await search.findProvidersByName(providerFragment));
+  const providers = await applyPermissionFilter(req, await search.findProvidersByName(providerFragment));
 
   if (providers.length === 0) {
     const response =

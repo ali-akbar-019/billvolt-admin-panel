@@ -1,6 +1,7 @@
 const Practice = require('../models/Practice.model');
 const Provider = require('../models/Provider.model');
 const CredentialingRecord = require('../models/CredentialingRecord.model');
+const { resolveVisibleScope } = require('../utils/scope.util');
 
 // Escapes a cell for CSV: double-quote embedded quotes, wrap when needed.
 const csvCell = (value) => {
@@ -11,13 +12,19 @@ const csvCell = (value) => {
 // GET /api/reports/export — full CSV dump of the credentialing operation.
 // Four sections: summary counts, practices, providers, and credentialing records.
 const getSummaryCsv = async (req, res) => {
+  // FR-001: reports are scoped to the requester's visible practices.
+  const { practiceIds, providerIds, recordIds } = await resolveVisibleScope(req.user);
+  const practiceFilter = practiceIds === null ? {} : { _id: { $in: practiceIds } };
+  const providerFilter = providerIds === null ? {} : { _id: { $in: providerIds } };
+  const recordFilter = recordIds === null ? {} : { _id: { $in: recordIds } };
+
   const [practiceCount, providerCount, recordCount, practices, providers, records] = await Promise.all([
-    Practice.countDocuments({}),
-    Provider.countDocuments({}),
-    CredentialingRecord.countDocuments({}),
-    Practice.find({}).sort({ groupName: 1 }).lean(),
-    Provider.find({}).populate('practiceId', 'groupName').sort({ name: 1 }).lean(),
-    CredentialingRecord.find({})
+    Practice.countDocuments(practiceFilter),
+    Provider.countDocuments(providerFilter),
+    CredentialingRecord.countDocuments(recordFilter),
+    Practice.find(practiceFilter).sort({ groupName: 1 }).lean(),
+    Provider.find(providerFilter).populate('practiceId', 'groupName').sort({ name: 1 }).lean(),
+    CredentialingRecord.find(recordFilter)
       .populate('providerId', 'name npi')
       .populate('assignedTo', 'name email')
       .sort({ payerName: 1 })
@@ -72,14 +79,20 @@ const getSummaryCsv = async (req, res) => {
 };
 
 const getSummary = async (req, res) => {
+  const { practiceIds, providerIds, recordIds } = await resolveVisibleScope(req.user);
+  const practiceFilter = practiceIds === null ? {} : { _id: { $in: practiceIds } };
+  const providerFilter = providerIds === null ? {} : { _id: { $in: providerIds } };
+  const recordProviderMatch = providerIds === null ? {} : { providerId: { $in: providerIds } };
+
   const [statusBreakdown, practiceCount, activePracticeCount, providerCount, activeProviderCount, topPayers] =
     await Promise.all([
-      CredentialingRecord.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-      Practice.countDocuments({}),
-      Practice.countDocuments({ status: 'active' }),
-      Provider.countDocuments({}),
-      Provider.countDocuments({ status: 'active' }),
+      CredentialingRecord.aggregate([{ $match: recordProviderMatch }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Practice.countDocuments(practiceFilter),
+      Practice.countDocuments({ status: 'active', ...practiceFilter }),
+      Provider.countDocuments(providerFilter),
+      Provider.countDocuments({ status: 'active', ...providerFilter }),
       CredentialingRecord.aggregate([
+        { $match: recordProviderMatch },
         { $group: { _id: '$payerName', count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 5 },

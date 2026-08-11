@@ -1,5 +1,7 @@
 const Practice = require('../models/Practice.model');
+const User = require('../models/User.model');
 const AuditLog = require('../models/AuditLog.model');
+const { practiceScopeFilter, visiblePracticeIds, canAccessPractice } = require('../utils/scope.util');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -18,7 +20,7 @@ const listPractices = async (req, res) => {
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
 
-  const filter = {};
+  const filter = practiceScopeFilter(req.user);
   if (status && ['active', 'inactive'].includes(status)) {
     filter.status = status;
   }
@@ -51,12 +53,20 @@ const getPractice = async (req, res) => {
   if (!practice) {
     return res.status(404).json({ error: 'Practice not found' });
   }
+  if (!canAccessPractice(req.user, practice)) {
+    return res.status(403).json({ error: 'You do not have access to this practice' });
+  }
   res.json({ practice });
 };
 
 // POST /api/practices
 const createPractice = async (req, res) => {
   const practice = await Practice.create({ ...req.body, createdBy: req.user._id });
+  // FR-001: a staff member who creates a practice gets it added to their
+  // assignments so they can actually see what they just built.
+  if (req.user.role !== 'admin') {
+    await User.findByIdAndUpdate(req.user._id, { $addToSet: { assignedPracticeIds: practice._id } });
+  }
   await logAudit(req, 'create', practice._id, { groupName: practice.groupName });
   res.status(201).json({ practice });
 };
@@ -66,6 +76,9 @@ const updatePractice = async (req, res) => {
   const practice = await Practice.findById(req.params.id);
   if (!practice) {
     return res.status(404).json({ error: 'Practice not found' });
+  }
+  if (!canAccessPractice(req.user, practice)) {
+    return res.status(403).json({ error: 'You do not have access to this practice' });
   }
 
   const changedFields = Object.keys(req.body);

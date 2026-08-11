@@ -1,6 +1,7 @@
 const TimelineEntry = require('../models/TimelineEntry.model');
 const CredentialingRecord = require('../models/CredentialingRecord.model');
 const AuditLog = require('../models/AuditLog.model');
+const { canAccessRecord, visiblePracticeIds } = require('../utils/scope.util');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -12,11 +13,28 @@ const logAudit = (req, action, resourceId, metadata) =>
     ipAddress: req.ip,
   }).catch((err) => console.error('Audit log failed:', err.message));
 
+// Loads the record the timeline belongs to, verifying the requester can see
+// it. Returns the record or null (after sending a 403/404).
+const loadAccessibleRecord = async (req, res, credentialingRecordId) => {
+  const record = await CredentialingRecord.findById(credentialingRecordId).populate('providerId', 'practiceId');
+  if (!record) {
+    return res.status(404).json({ error: 'Credentialing record not found' });
+  }
+  if (!canAccessRecord(req.user, record)) {
+    return res.status(403).json({ error: 'You do not have access to this credentialing record' });
+  }
+  return record;
+};
+
 // GET /api/timeline?credentialingRecordId=... — newest first, no pagination cap (unlimited log per spec)
 const listEntries = async (req, res) => {
   const { credentialingRecordId } = req.query;
   if (!credentialingRecordId) {
     return res.status(400).json({ error: 'credentialingRecordId is required' });
+  }
+  if (visiblePracticeIds(req.user) !== null) {
+    const record = await loadAccessibleRecord(req, res, credentialingRecordId);
+    if (!record) return;
   }
   const entries = await TimelineEntry.find({ credentialingRecordId })
     .populate('userId', 'name')
@@ -26,10 +44,11 @@ const listEntries = async (req, res) => {
 
 // POST /api/timeline
 const createEntry = async (req, res) => {
-  const record = await CredentialingRecord.findById(req.body.credentialingRecordId);
-  if (!record) {
-    return res.status(404).json({ error: 'Credentialing record not found' });
+  if (visiblePracticeIds(req.user) !== null && !req.body.credentialingRecordId) {
+    return res.status(400).json({ error: 'credentialingRecordId is required' });
   }
+  const record = await loadAccessibleRecord(req, res, req.body.credentialingRecordId);
+  if (!record) return;
 
   const entry = await TimelineEntry.create({ ...req.body, userId: req.user._id });
   await logAudit(req, 'create', entry._id, { credentialingRecordId: record._id, activityType: entry.activityType });

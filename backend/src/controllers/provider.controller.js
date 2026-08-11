@@ -1,5 +1,6 @@
 const Provider = require('../models/Provider.model');
 const AuditLog = require('../models/AuditLog.model');
+const { visiblePracticeIds, canAccessPractice, canAccessProvider } = require('../utils/scope.util');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -19,7 +20,16 @@ const listProviders = async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
 
   const filter = {};
-  if (practiceId) filter.practiceId = practiceId;
+  if (practiceId) {
+    // Staff may only query practices they're assigned to; an explicit
+    // practice id outside the visible set is treated as a 403.
+    if (!canAccessPractice(req.user, practiceId)) {
+      return res.status(403).json({ error: 'You do not have access to this practice' });
+    }
+    filter.practiceId = practiceId;
+  } else if (visiblePracticeIds(req.user) !== null) {
+    filter.practiceId = { $in: visiblePracticeIds(req.user) };
+  }
   if (status && ['active', 'inactive'].includes(status)) filter.status = status;
   if (specialty) filter.specialty = { $regex: specialty.trim(), $options: 'i' };
   if (q && q.trim()) {
@@ -51,6 +61,9 @@ const getProvider = async (req, res) => {
   if (!provider) {
     return res.status(404).json({ error: 'Provider not found' });
   }
+  if (!canAccessProvider(req.user, provider)) {
+    return res.status(403).json({ error: 'You do not have access to this provider' });
+  }
   res.json({ provider });
 };
 
@@ -74,6 +87,9 @@ const getSensitiveFields = async (req, res) => {
 
 // POST /api/providers
 const createProvider = async (req, res) => {
+  if (!canAccessPractice(req.user, req.body.practiceId)) {
+    return res.status(403).json({ error: 'You do not have access to this practice' });
+  }
   const provider = await Provider.create(req.body);
   await logAudit(req, 'create', provider._id, { name: provider.name, practiceId: provider.practiceId });
   const populated = await provider.populate('practiceId', 'groupName');
@@ -85,6 +101,14 @@ const updateProvider = async (req, res) => {
   const provider = await Provider.findById(req.params.id);
   if (!provider) {
     return res.status(404).json({ error: 'Provider not found' });
+  }
+  if (!canAccessProvider(req.user, provider)) {
+    return res.status(403).json({ error: 'You do not have access to this provider' });
+  }
+  // A staff user changing practiceId can only re-home a provider into a
+  // practice they can see themselves.
+  if (req.body.practiceId && !canAccessPractice(req.user, req.body.practiceId)) {
+    return res.status(403).json({ error: 'You do not have access to the target practice' });
   }
 
   const changedFields = Object.keys(req.body);

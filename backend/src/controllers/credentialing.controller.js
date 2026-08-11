@@ -3,6 +3,7 @@ const Provider = require('../models/Provider.model');
 const FollowUp = require('../models/FollowUp.model');
 const AuditLog = require('../models/AuditLog.model');
 const { notifyForFollowUps } = require('./followup.controller');
+const { visiblePracticeIds, canAccessProvider, canAccessRecord } = require('../utils/scope.util');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -57,11 +58,28 @@ const listRecords = async (req, res) => {
   const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 200);
 
   const filter = {};
+  const visiblePracticeIdsForStaff = visiblePracticeIds(req.user);
+
+  // Staff only ever see records whose provider belongs to an assigned practice.
+  // Resolve that provider set once and constrain every other query param to it.
+  const scopedProviderIds =
+    visiblePracticeIdsForStaff === null
+      ? null
+      : await Provider.find({ practiceId: { $in: visiblePracticeIdsForStaff } }).distinct('_id');
+
   if (providerId) {
+    if (scopedProviderIds !== null && !scopedProviderIds.some((id) => id.toString() === providerId)) {
+      return res.status(403).json({ error: 'You do not have access to this provider' });
+    }
     filter.providerId = providerId;
   } else if (practiceId) {
+    if (visiblePracticeIdsForStaff !== null && !visiblePracticeIdsForStaff.some((id) => id.toString() === practiceId)) {
+      return res.status(403).json({ error: 'You do not have access to this practice' });
+    }
     const providerIds = await Provider.find({ practiceId }).distinct('_id');
     filter.providerId = { $in: providerIds };
+  } else if (scopedProviderIds !== null) {
+    filter.providerId = { $in: scopedProviderIds };
   }
   if (status) filter.status = status;
   if (payerName && payerName.trim()) {
@@ -89,11 +107,18 @@ const getRecord = async (req, res) => {
   if (!record) {
     return res.status(404).json({ error: 'Credentialing record not found' });
   }
+  if (!canAccessRecord(req.user, record)) {
+    return res.status(403).json({ error: 'You do not have access to this credentialing record' });
+  }
   res.json({ record });
 };
 
 // POST /api/credentialing
 const createRecord = async (req, res) => {
+  const provider = await Provider.findById(req.body.providerId).select('practiceId name');
+  if (!provider || !canAccessProvider(req.user, provider)) {
+    return res.status(403).json({ error: 'You do not have access to this provider' });
+  }
   try {
     const record = await CredentialingRecord.create(req.body);
     await syncFollowUp(record, req);
@@ -113,9 +138,13 @@ const createRecord = async (req, res) => {
 
 // PATCH /api/credentialing/:id
 const updateRecord = async (req, res) => {
-  const record = await CredentialingRecord.findById(req.params.id);
+  const record = await CredentialingRecord.findById(req.params.id)
+    .populate('providerId', 'practiceId');
   if (!record) {
     return res.status(404).json({ error: 'Credentialing record not found' });
+  }
+  if (!canAccessProvider(req.user, record.providerId)) {
+    return res.status(403).json({ error: 'You do not have access to this credentialing record' });
   }
 
   const changedFields = Object.keys(req.body);

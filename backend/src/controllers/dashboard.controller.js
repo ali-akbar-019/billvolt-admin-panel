@@ -2,6 +2,7 @@ const Practice = require('../models/Practice.model');
 const Provider = require('../models/Provider.model');
 const CredentialingRecord = require('../models/CredentialingRecord.model');
 const FollowUp = require('../models/FollowUp.model');
+const { resolveVisibleScope, followUpScopeFilter } = require('../utils/scope.util');
 
 const startOfMonth = () => {
   const date = new Date();
@@ -36,6 +37,14 @@ const getSummary = async (req, res) => {
   const { start: todayStart, end: todayEnd } = dayBounds();
   const trendFrom = new Date(`${lastMonths(6)[0].year}-${String(lastMonths(6)[0].month).padStart(2, '0')}-01T00:00:00.000Z`);
 
+  // FR-001: staff statistics are scoped to their assigned practices.
+  const { practiceIds, providerIds, recordIds } = await resolveVisibleScope(req.user);
+  const practiceFilter = practiceIds === null ? {} : { _id: { $in: practiceIds } };
+  const providerFilter = providerIds === null ? {} : { _id: { $in: providerIds } };
+  const recordFilter = recordIds === null ? {} : { _id: { $in: recordIds } };
+  const credentialingAggregateMatch = recordIds === null ? {} : { providerId: { $in: providerIds } };
+  const followUpScope = await followUpScopeFilter(req.user);
+
   const [
     activePractices,
     approvedThisMonth,
@@ -47,15 +56,15 @@ const getSummary = async (req, res) => {
     trend,
     topPayers,
   ] = await Promise.all([
-    Practice.countDocuments({ status: 'active' }),
-    CredentialingRecord.countDocuments({ status: 'approved', updatedAt: { $gte: monthStart } }),
-    CredentialingRecord.countDocuments({ status: { $in: ['not_started', 'in_progress', 'submitted'] } }),
-    Provider.countDocuments({}),
-    Provider.countDocuments({ status: 'active' }),
-    FollowUp.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
-    CredentialingRecord.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+    Practice.countDocuments({ status: 'active', ...practiceFilter }),
+    CredentialingRecord.countDocuments({ status: 'approved', updatedAt: { $gte: monthStart }, ...recordFilter }),
+    CredentialingRecord.countDocuments({ status: { $in: ['not_started', 'in_progress', 'submitted'] }, ...recordFilter }),
+    Provider.countDocuments(providerFilter),
+    Provider.countDocuments({ status: 'active', ...providerFilter }),
+    FollowUp.aggregate([{ $match: followUpScope }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
+    CredentialingRecord.aggregate([{ $match: credentialingAggregateMatch }, { $group: { _id: '$status', count: { $sum: 1 } } }]),
     CredentialingRecord.aggregate([
-      { $match: { createdAt: { $gte: trendFrom } } },
+      { $match: { createdAt: { $gte: trendFrom }, ...credentialingAggregateMatch } },
       {
         $group: {
           _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' }, status: '$status' },
@@ -64,6 +73,7 @@ const getSummary = async (req, res) => {
       },
     ]),
     CredentialingRecord.aggregate([
+      { $match: credentialingAggregateMatch },
       { $group: { _id: '$payerName', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 5 },
@@ -93,9 +103,9 @@ const getSummary = async (req, res) => {
     };
   });
 
-  const dueToday = FollowUp.countDocuments({ status: 'pending', dueDate: { $gte: todayStart, $lte: todayEnd } });
-  const overdue = FollowUp.countDocuments({ status: 'pending', dueDate: { $lt: todayStart } });
-  const upcoming = FollowUp.countDocuments({ status: 'pending', dueDate: { $gt: todayEnd } });
+  const dueToday = FollowUp.countDocuments({ ...followUpScope, status: 'pending', dueDate: { $gte: todayStart, $lte: todayEnd } });
+  const overdue = FollowUp.countDocuments({ ...followUpScope, status: 'pending', dueDate: { $lt: todayStart } });
+  const upcoming = FollowUp.countDocuments({ ...followUpScope, status: 'pending', dueDate: { $gt: todayEnd } });
   const [followUpsToday, followUpsOverdue, followUpsUpcoming] = await Promise.all([dueToday, overdue, upcoming]);
 
   res.json({

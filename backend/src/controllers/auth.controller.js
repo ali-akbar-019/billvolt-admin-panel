@@ -23,7 +23,7 @@ const issueTokensForUser = async (res, user) => {
 // POST /api/auth/register — admin-only, creates staff/admin accounts.
 // There is no public self-signup: this is an internal tool, not a consumer app.
 const register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, assignedPracticeIds } = req.body;
 
   const existing = await User.findOne({ email });
   if (existing) {
@@ -31,7 +31,13 @@ const register = async (req, res) => {
   }
 
   const passwordHash = await User.hashPassword(password);
-  const user = await User.create({ name, email, passwordHash, role: role || 'staff' });
+  const user = await User.create({
+    name,
+    email,
+    passwordHash,
+    role: role || 'staff',
+    assignedPracticeIds: assignedPracticeIds || [],
+  });
 
   res.status(201).json({ user });
 };

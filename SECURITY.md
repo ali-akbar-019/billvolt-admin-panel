@@ -39,10 +39,6 @@ endpoint, instead of patching each controller individually.
 
 ## Known gaps (out of scope for this build, flagged for later)
 
-- Per-practice user assignment (FR-001's "General User only sees assigned
-  practices") isn't implemented — every authenticated user can currently see
-  every practice/provider. The AI assistant's `applyPermissionFilter` is a
-  no-op stub for exactly this reason.
 - No MFA — email/password only.
 - No automated dependency vulnerability scanning (`npm audit` in CI) set up.
   Note: `npm audit` currently flags 2 high-severity advisories in
@@ -50,3 +46,10 @@ endpoint, instead of patching each controller individually.
   logging by default, but worth a review before enabling SMTP in production.
 - No HIPAA/SOC 2 readiness review — that's a compliance exercise, not a code
   change.
+
+## Per-practice user assignment (FR-001)
+
+Implemented: staff users carry `assignedPracticeIds` and every list/detail/write
+endpoint (practices, providers, credentialing, timeline, follow-ups, dashboard,
+reports, and the AI assistant) is scoped to those practices. Admins are
+unrestricted. See `README.md` and `QA_CHECKLIST.md`.

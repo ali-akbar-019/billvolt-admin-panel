@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema(
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, enum: ['admin', 'staff'], default: 'staff', index: true },
     status: { type: String, enum: ['active', 'disabled'], default: 'active' },
+    // FR-001: staff can only see the practices they're assigned to.
+    // Admins are unrestricted (ignored when role === 'admin').
+    assignedPracticeIds: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Practice', default: [] }],
     lastLoginAt: { type: Date },
   },
   { timestamps: true }

@@ -5,6 +5,7 @@ const registerSchema = z.object({
   email: z.string().trim().email('Invalid email address'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['admin', 'staff']).optional(),
+  assignedPracticeIds: z.array(z.string()).optional(),
 });
 
 const loginSchema = z.object({

@@ -47,3 +47,17 @@ touch your real database and needs no `MONGODB_URI`.
       the send is recorded in `/audit-log`
 - [ ] Update the overdue-notification toggle in Settings (`/settings`) and
       confirm it flips notification behavior
+
+## FR-001 — per-practice scoping
+- [ ] Log in as demo staff (`sarah.mitchell@billvolt.com` / `Staff@12345`) —
+      Practices, Providers, Credentialing, Follow-ups, Dashboard, and Reports
+      only show the practices seeded to that user (a subset of the 5)
+- [ ] Admin can open User management and change a staff user's practice
+      assignments; the change appears in `/audit-log`
+- [ ] As staff, try opening a practice/provider/credentialing record from an
+      unassigned practice directly by URL — expect a "no access" message
+      (backend 403)
+- [ ] As staff, try creating a provider under an unassigned practice — blocked;
+      creating inside an assigned practice works
+- [ ] Staff user with zero assignments sees empty lists, not everyone else's data
+- [ ] Admin account sees all practices regardless of any assignments

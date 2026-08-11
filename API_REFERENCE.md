@@ -9,7 +9,7 @@ after login — see `frontend/src/api/client.ts`).
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| POST | `/auth/register` | admin | Creates a staff or admin account. No public self-signup. |
+| POST | `/auth/register` | admin | Creates a staff or admin account. No public self-signup. Accepts optional `assignedPracticeIds` (ignored for admins). |
 | POST | `/auth/login` | public | Rate limited to 10 attempts / 15 min. |
 | POST | `/auth/refresh` | — | Rotates the refresh token. |
 | POST | `/auth/logout` | authenticated | Clears cookies, revokes the session if Redis is configured. |
@@ -20,8 +20,15 @@ after login — see `frontend/src/api/client.ts`).
 | Method | Path | Access | Notes |
 |---|---|---|---|
 | GET | `/users` | admin | List all users. |
-| PATCH | `/users/:id` | admin | Update role/status. |
+| PATCH | `/users/:id` | admin | Update `role`, `status`, or `assignedPracticeIds` (array of practice ids). Assignment changes are audit logged. |
 | DELETE | `/users/:id` | admin | Remove a user. |
+
+> **FR-001 scoping.** Staff accounts see only the practices listed in
+> `assignedPracticeIds` — that filter is applied to every list/detail/write
+> endpoint (practices, providers, credentialing, timeline, follow-ups,
+> dashboard, reports, and the AI assistant). Admins are unrestricted. A staff
+> user with no assignments sees empty lists. Data created by staff in an
+> assigned practice stays inside it.
 
 ## Practices
 
