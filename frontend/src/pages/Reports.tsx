@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Download } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { STATUS_LABEL, statusColors } from '../constants/credentialing';
@@ -15,6 +15,7 @@ interface Summary {
 export function Reports() {
   const { showToast } = useToast();
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     apiClient
@@ -23,6 +24,25 @@ export function Reports() {
       .catch(() => showToast('Could not load reports', 'error'));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const exportCsv = async () => {
+    setIsExporting(true);
+    try {
+      const res = await apiClient.get('/reports/export', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reports-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      showToast('Could not export reports', 'error');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   if (!summary) {
     return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>Loading reports…</div>;
@@ -34,10 +54,25 @@ export function Reports() {
 
   return (
     <div>
-      <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Reports</h1>
-      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 24px' }}>
-        A snapshot of practices, providers, and credentialing status.
-      </p>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Reports</h1>
+          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
+            A snapshot of practices, providers, and credentialing status.
+          </p>
+        </div>
+        <button
+          onClick={exportCsv}
+          disabled={isExporting}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
+            border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5,
+            fontWeight: 600, cursor: isExporting ? 'not-allowed' : 'pointer', opacity: isExporting ? 0.6 : 1,
+          }}
+        >
+          <Download size={15} /> {isExporting ? 'Exporting…' : 'Export CSV'}
+        </button>
+      </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         <SummaryCard label="Practices" value={summary.practices.total} sub={`${summary.practices.active} active`} />

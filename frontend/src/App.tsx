@@ -15,6 +15,7 @@ import { Reports } from './pages/Reports'
 import { AIAssistant } from './pages/AIAssistant'
 import { Users } from './pages/Users'
 import { SettingsPage } from './pages/SettingsPage'
+import { AuditLogs } from './pages/AuditLogs'
 
 function App() {
   return (
@@ -54,6 +55,14 @@ function App() {
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/audit-log"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AuditLogs />
                 </ProtectedRoute>
               }
             />

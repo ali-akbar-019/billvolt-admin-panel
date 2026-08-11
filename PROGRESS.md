@@ -69,6 +69,33 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 - [x] Org name, timezone, contact email, session timeout, overdue follow-up
   notification toggle. Read-only for staff.
 
+### Audit log (`/audit-log`, admin) — Phase 5
+- [x] Admin screen browsing every `AuditLog` entry: filter by action, resource
+  type, and date range, with pagination (`.table-scroll` table, `MetaPreview`
+  shows metadata inline).
+- [x] Backend `GET /api/audit-logs` (admin-only), newest-first, `userId` populated
+  to name/email, Zod-free simple query params, pagination cap at 200.
+
+### Report export (CSV) — Phase 5
+- [x] `GET /api/reports/export` returns a four-section CSV: summary counts,
+  practices, providers, credentialing records (properly escaped cells,
+  attachment filename + `text/csv`).
+- [x] Reports page "Export CSV" button downloads via blob from `apiClient` with
+  loading + error toast.
+
+### Follow-up notifications (nodemailer) — Phase 5
+- [x] `backend/src/services/mailer.service.js` — SMTP via nodemailer, configured
+  from `SMTP_HOST/PORT/SECURE/USER/PASS/FROM` + `EMAIL_ENABLED`. **If SMTP isn't
+  configured, emails are logged to the console** — the app keeps working locally
+  with zero config.
+- [x] `backend/src/services/followUpNotify.service.js` — digest of pending
+  overdue / due-today follow-ups, grouped per assigned user email (falls back to
+  org `contactEmail`), respects `notifyOnOverdueFollowUps`.
+- [x] Hooked into follow-up create/update; manual admin re-send via
+  `POST /api/followups/notify` (audit-logged).
+- [x] `nodemailer` dependency installed; `backend/.env.example` documents the
+  SMTP_* vars.
+
 ### Responsive layout (full pass)
 - [x] Sidebar collapses into a mobile drawer ≤900px with backdrop + hamburger.
 - [x] Every page audited and responsive: login, dashboard, reports, follow-ups,
@@ -114,12 +141,12 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 | Item | Status | Notes |
 |---|---|---|
 | Document repository (file upload & versioning) | Placeholder only | Practice workspace "Documents" tab is a placeholder; W-9s, licenses, payer contracts not stored. Needs storage scope (S3/GridFS) + upload UI. |
-| Archived reports / date-range pickers | Not built | Reports are live-snapshot only; no historical date-range query or export (CSV/PDF). |
-| Email / SMS follow-up notifications | Not built | Only in-app bell + page list today; `notifyOnOverdueFollowUps` toggle is a stored preference, not wired to actual senders. |
+| Archived reports / date-range pickers | Partial | CSV export done (`/api/reports/export` + "Export CSV" button); still no on-screen date-range/archived report picker. |
+| Email / SMS follow-up notifications | Email done | Nodemailer digest for overdue/due-today (console fallback when unconfigured); SMS transport still not built. |
 | Session timeout enforcement | Policy only | `sessionTimeoutMinutes` is displayed but not wired to session expiry. |
 | Frontend automated tests | Not built | No Vitest/Testing Library setup. |
 | Paginated "load more" UX | N/A | Backend paginates; list pages currently fetch with large `limit` and render all. |
-| Audit log UI | Not built | Backend writes audit entries; no admin screen to view them yet. |
+| Audit log UI | Done | Admin screen at `/audit-log` with filters + pagination (see above). |
 
 ---
 
@@ -162,10 +189,10 @@ npm run preview
 
 1. **Document repository** — pick storage (S3 or GridFS), build upload/list UI in
    the Practice workspace, wire to backend.
-2. **Audit log admin screen** — read `AuditLog` records with filters; the data is
-   already being written.
-3. **Session timeout enforcement** — apply the configured minutes to access-token
+2. **Session timeout enforcement** — apply the configured minutes to access-token
    lifetime / idle check.
-4. **Reports export** — CSV download + optional date-range filter.
-5. **Follow-up notifications** — email/SMS transport behind the existing setting.
-6. **Frontend test setup** — Vitest + React Testing Library smoke tests.
+3. **Reports date-range / archived picker** — on-screen filter + per-period CSV
+   on top of the existing export.
+4. **SMS notifications** — transport behind the existing follow-up setting
+   (email digest already built).
+5. **Frontend test setup** — Vitest + React Testing Library smoke tests.

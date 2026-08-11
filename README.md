@@ -400,9 +400,11 @@ Step-by-step instructions: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | 2 | Practices, Providers, Credentialing Grid, CRUD, search/filtering | ✅ Done |
 | 3 | Follow-ups, Timeline, Reports, AI Assistant, notifications, dashboard charts | ✅ Done |
 | 4 | Settings, security audit, testing, deployment config, docs | ✅ Done |
+| 5 | Audit log admin screen, report CSV export, follow-up email notifications | ✅ Done |
 
 Deferred (documented in `PRESENTATION.md`): per-document file storage, archived
-reports with date-range pickers, and email/SMS follow-up notifications.
+reports with date-range pickers, and SMS follow-up notifications (email digest is
+live — see below).
 
 ---
 

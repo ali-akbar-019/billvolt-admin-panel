@@ -2,6 +2,7 @@ const CredentialingRecord = require('../models/CredentialingRecord.model');
 const Provider = require('../models/Provider.model');
 const FollowUp = require('../models/FollowUp.model');
 const AuditLog = require('../models/AuditLog.model');
+const { notifyForFollowUps } = require('./followup.controller');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -37,13 +38,15 @@ const syncFollowUp = async (record, req) => {
   }
 
   const provider = await Provider.findById(record.providerId).select('name');
-  await FollowUp.create({
+  const followUp = await FollowUp.create({
     title: `Follow up: ${record.payerName}${provider ? ` — ${provider.name}` : ''}`,
     linkedType: 'CredentialingRecord',
     linkedId: record._id,
     dueDate: record.nextFollowUpDate,
     assignedTo: record.assignedTo || req.user._id,
   });
+  const populated = await followUp.populate('assignedTo', 'name email');
+  notifyForFollowUps([populated]);
 };
 
 // GET /api/credentialing

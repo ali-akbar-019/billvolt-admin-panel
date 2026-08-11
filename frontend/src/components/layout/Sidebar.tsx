@@ -9,6 +9,7 @@ import {
   Sparkles,
   Users,
   Settings,
+  ScrollText,
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -24,6 +25,7 @@ const NAV_ITEMS = [
 
 const ADMIN_ITEMS = [
   { to: '/users', label: 'User management', icon: Users },
+  { to: '/audit-log', label: 'Audit log', icon: ScrollText },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];
 

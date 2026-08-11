@@ -13,8 +13,12 @@
   },
   "jest": {
     "testEnvironment": "node",
-    "setupFiles": ["<rootDir>/tests/env.setup.js"],
-    "setupFilesAfterEnv": ["<rootDir>/tests/db.setup.js"],
+    "setupFiles": [
+      "<rootDir>/tests/env.setup.js"
+    ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/db.setup.js"
+    ],
     "testTimeout": 20000
   },
   "dependencies": {
@@ -30,13 +34,14 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.5.0",
     "morgan": "^1.10.0",
+    "nodemailer": "^9.0.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {
-    "nodemon": "^3.1.4",
     "jest": "^29.7.0",
-    "supertest": "^7.0.0",
-    "mongodb-memory-server": "^9.4.1"
+    "mongodb-memory-server": "^9.4.1",
+    "nodemon": "^3.1.4",
+    "supertest": "^7.0.0"
   },
   "engines": {
     "node": ">=18.0.0"

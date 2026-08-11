@@ -10,6 +10,7 @@ router.use(protect);
 
 router.get('/', followUpController.listFollowUps);
 router.get('/counts', followUpController.getCounts);
+router.post('/notify', authorize('admin'), followUpController.notifyOverdue);
 router.get('/:id', followUpController.getFollowUp);
 router.post('/', validate(createFollowUpSchema), followUpController.createFollowUp);
 router.patch('/:id', validate(updateFollowUpSchema), followUpController.updateFollowUp);

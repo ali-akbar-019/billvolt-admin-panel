@@ -6,5 +6,6 @@ const router = express.Router();
 
 router.use(protect);
 router.get('/summary', reportsController.getSummary);
+router.get('/export', reportsController.getSummaryCsv);
 
 module.exports = router;

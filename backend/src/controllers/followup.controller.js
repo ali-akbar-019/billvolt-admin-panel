@@ -1,5 +1,7 @@
 const FollowUp = require('../models/FollowUp.model');
 const AuditLog = require('../models/AuditLog.model');
+const OrgSettings = require('../models/OrgSettings.model');
+const { sendFollowUpDigest } = require('../services/followUpNotify.service');
 
 const logAudit = (req, action, resourceId, metadata) =>
   AuditLog.create({
@@ -18,6 +20,57 @@ const dayBounds = (offsetDays = 0) => {
   const end = new Date(start);
   end.setHours(23, 59, 59, 999);
   return { start, end };
+};
+
+// Loads org settings so the notification digest can respect the toggle and
+// fall back to the org contact email when a follow-up has no assignee.
+const getOrgContext = async () => {
+  let settings = await OrgSettings.findOne();
+  if (!settings) settings = await OrgSettings.create({});
+  return {
+    notifyEnabled: settings.notifyOnOverdueFollowUps !== false,
+    orgContactEmail: settings.contactEmail,
+  };
+};
+
+// Sends a digest for follow-ups that are pending and due today or overdue.
+// No-op when notifications are off; never throws into request handlers.
+const notifyForFollowUps = async (followUps) => {
+  try {
+    const { notifyEnabled, orgContactEmail } = await getOrgContext();
+    if (!notifyEnabled) return;
+    const pending = followUps.filter((f) => f.status === 'pending');
+    const due = pending.filter((f) => f.dueDate <= dayBounds().end);
+    if (due.length === 0) return;
+    await sendFollowUpDigest(due, { orgContactEmail });
+  } catch (err) {
+    console.error('Notification digest failed:', err.message);
+  }
+};
+
+// POST /api/followups/notify — admin manual re-send of a digest for the
+// currently pending overdue / due-today follow-ups.
+const notifyOverdue = async (req, res) => {
+  const { start: todayStart, end: todayEnd } = dayBounds();
+  const followUps = await FollowUp.find({
+    status: 'pending',
+    dueDate: { $lte: todayEnd },
+  })
+    .populate('assignedTo', 'name email')
+    .sort({ dueDate: 1 });
+
+  await notifyForFollowUps(followUps);
+
+  await AuditLog.create({
+    userId: req.user._id,
+    action: 'notify',
+    resourceType: 'FollowUp',
+    resourceId: followUps[0]?._id,
+    metadata: { manual: true, count: followUps.length },
+    ipAddress: req.ip,
+  }).catch((err) => console.error('Audit log failed:', err.message));
+
+  res.json({ message: `Notification digest sent for ${followUps.length} follow-up(s)`, count: followUps.length });
 };
 
 // GET /api/followups
@@ -89,6 +142,7 @@ const createFollowUp = async (req, res) => {
   const followUp = await FollowUp.create(req.body);
   await logAudit(req, 'create', followUp._id, { title: followUp.title, linkedType: followUp.linkedType });
   const populated = await followUp.populate('assignedTo', 'name email');
+  await notifyForFollowUps([populated]);
   res.status(201).json({ followUp: populated });
 };
 
@@ -105,6 +159,7 @@ const updateFollowUp = async (req, res) => {
 
   await logAudit(req, 'update', followUp._id, { changedFields });
   const populated = await followUp.populate('assignedTo', 'name email');
+  await notifyForFollowUps([populated]);
   res.json({ followUp: populated });
 };
 
@@ -118,4 +173,4 @@ const deleteFollowUp = async (req, res) => {
   res.json({ message: 'Follow-up deleted' });
 };
 
-module.exports = { listFollowUps, getCounts, getFollowUp, createFollowUp, updateFollowUp, deleteFollowUp };
+module.exports = { listFollowUps, getCounts, getFollowUp, createFollowUp, updateFollowUp, deleteFollowUp, notifyOverdue, notifyForFollowUps };

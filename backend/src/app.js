@@ -19,6 +19,7 @@ const timelineRoutes = require('./routes/timeline.routes');
 const reportsRoutes = require('./routes/reports.routes');
 const aiRoutes = require('./routes/ai.routes');
 const orgSettingsRoutes = require('./routes/orgSettings.routes');
+const auditLogRoutes = require('./routes/auditLog.routes');
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use('/api/timeline', timelineRoutes);
 app.use('/api/reports', reportsRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/settings', orgSettingsRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 // --- 404 handler ---
 app.use((req, res) => {
