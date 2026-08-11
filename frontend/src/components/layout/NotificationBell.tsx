@@ -75,7 +75,7 @@ export function NotificationBell() {
       {isOpen && (
         <div
           className="surface-card"
-          style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 300, padding: 8, zIndex: 30 }}
+          style={{ position: 'absolute', right: 0, top: 'calc(100% + 8px)', width: 'min(300px, calc(100vw - 32px))', padding: 8, zIndex: 30 }}
         >
           <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', padding: '6px 10px' }}>
             Overdue & due today

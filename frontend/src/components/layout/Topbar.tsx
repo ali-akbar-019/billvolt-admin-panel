@@ -18,6 +18,7 @@ export function Topbar({ onMenuClick }: TopbarProps) {
 
   return (
     <header
+      className="topbar"
       style={{
         height: 68,
         borderBottom: '1px solid var(--border)',
@@ -40,9 +41,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
         <Menu size={18} />
       </button>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto' }}>
+      <div className="topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 14, marginLeft: 'auto' }}>
         <NotificationBell />
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div className="topbar-user" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
               width: 36,
@@ -55,11 +56,12 @@ export function Topbar({ onMenuClick }: TopbarProps) {
               justifyContent: 'center',
               fontSize: 14,
               fontWeight: 600,
+              flexShrink: 0,
             }}
           >
             {initials}
           </div>
-          <div style={{ lineHeight: 1.3 }}>
+          <div className="topbar-user-text" style={{ lineHeight: 1.3 }}>
             <p style={{ fontSize: 14.5, fontWeight: 600, margin: 0 }}>{user?.name}</p>
             <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0, textTransform: 'capitalize' }}>
               {user?.role}

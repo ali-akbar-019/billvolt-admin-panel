@@ -136,7 +136,7 @@ export function PracticeWorkspace() {
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
+      <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', borderBottom: '1px solid var(--border)', marginBottom: 24 }}>
         {TABS.map(({ id: tabId, label, icon: Icon }) => (
           <button
             key={tabId}

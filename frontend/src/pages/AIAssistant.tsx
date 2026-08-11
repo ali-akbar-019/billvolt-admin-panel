@@ -47,7 +47,7 @@ export function AIAssistant() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 130px)' }}>
+    <div className="ai-shell" style={{ display: 'flex', flexDirection: 'column' }}>
       <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>AI assistant</h1>
       <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 20px' }}>
         Grounded in your own data — it only answers from what's actually in the portal.

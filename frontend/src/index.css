@@ -588,6 +588,31 @@ h4 {
   }
 }
 
+/* AI assistant chat shell: keep it filling the viewport but never overflowing */
+.ai-shell {
+  height: calc(100vh - 130px);
+}
+
+@media (max-width: 640px) {
+  .ai-shell {
+    height: calc(100dvh - 140px);
+  }
+}
+
+/* Topbar: tightens up on small screens */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 16px !important;
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .topbar-user-text {
+    display: none;
+  }
+}
+
 /* Responsive tables: allow horizontal scroll instead of squeezing columns */
 .table-scroll {
   width: 100%;
