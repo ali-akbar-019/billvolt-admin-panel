@@ -552,6 +552,11 @@ h4 {
   display: none;
 }
 
+.app-shell-sidebar {
+  position: sticky;
+  top: 0;
+}
+
 .app-main {
   padding: 28px 32px;
 }

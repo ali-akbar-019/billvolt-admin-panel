@@ -63,8 +63,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         flexDirection: 'column',
         padding: '22px 16px',
         height: '100vh',
-        position: 'sticky',
-        top: 0,
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0 8px', marginBottom: 28 }}>
