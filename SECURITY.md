@@ -45,5 +45,8 @@ endpoint, instead of patching each controller individually.
   no-op stub for exactly this reason.
 - No MFA — email/password only.
 - No automated dependency vulnerability scanning (`npm audit` in CI) set up.
+  Note: `npm audit` currently flags 2 high-severity advisories in
+  `nodemailer`'s transitive deps — email is opt-in and falls back to console
+  logging by default, but worth a review before enabling SMTP in production.
 - No HIPAA/SOC 2 readiness review — that's a compliance exercise, not a code
   change.

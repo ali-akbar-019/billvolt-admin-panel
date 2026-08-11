@@ -31,3 +31,19 @@ touch your real database and needs no `MONGODB_URI`.
       disabled and admin-only buttons/routes are hidden or blocked
 - [ ] Try `GET /api/providers/:id` as any authenticated user — confirm `ssn`
       and `caqh.username`/`password` are absent from the response
+
+## Phase 5 — new flows
+- [ ] Open `/audit-log` as admin — filter by action, resource type, user, and
+      date range; page through results; entries show who/what/when
+- [ ] As staff, `/audit-log` is blocked (route hidden, API returns 403)
+- [ ] Open `/reports`, click "Export CSV" — a `reports-YYYY-MM-DD.csv` downloads
+      with Summary / Practices / Providers / Credentialing sections
+- [ ] Unauthenticated `GET /api/reports/export` is rejected (401)
+- [ ] Set a follow-up due today with status pending (or post
+      `PATCH /api/followups/:id` to make an existing one overdue) — the console
+      shows the nodemailer fallback digest when SMTP isn't configured:
+      `[mailer] SMTP not configured — would send email to ...`
+- [ ] Admin `POST /api/followups/notify` re-sends the digest; staff gets 403;
+      the send is recorded in `/audit-log`
+- [ ] Update the overdue-notification toggle in Settings (`/settings`) and
+      confirm it flips notification behavior

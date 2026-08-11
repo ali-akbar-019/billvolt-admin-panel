@@ -69,9 +69,16 @@ after login — see `frontend/src/api/client.ts`).
 | GET | `/followups` | authenticated | `?bucket=today\|upcoming\|overdue`, `?status=`, `?assignedTo=`, `?page=`, `?limit=`. Overdue items include `daysOverdue`. |
 | GET | `/followups/counts` | authenticated | Today/overdue/upcoming counts. |
 | GET | `/followups/:id` | authenticated | |
-| POST | `/followups` | authenticated | Requires `linkedType`, `linkedId`, `dueDate`. |
+| POST | `/followups` | authenticated | Requires `linkedType`, `linkedId`, `dueDate`. Creates/sends a notification digest when due today or overdue (SMTP configured) or logs it to the console (not configured). |
 | PATCH | `/followups/:id` | authenticated | Reschedule, reassign, or `{ "status": "completed" }`. |
+| POST | `/followups/notify` | admin | Manual digest re-send for all pending overdue / due-today follow-ups. Audit logged. |
 | DELETE | `/followups/:id` | admin | |
+
+## Audit log (admin)
+
+| Method | Path | Access | Notes |
+|---|---|---|---|
+| GET | `/audit-logs` | admin | List `AuditLog` entries newest-first. `?action=`, `?resourceType=`, `?userId=`, `?from=`, `?to=`, `?page=`, `?limit=` (max 200). `userId` populated to `name`/`email`. Covers record creates/updates/deletes, sensitive-data reveals, settings changes, and manual notification sends. |
 
 ## Dashboard & Reports
 
@@ -79,6 +86,7 @@ after login — see `frontend/src/api/client.ts`).
 |---|---|---|---|
 | GET | `/dashboard/summary` | authenticated | Stat totals (active practices, approved-this-month, pending credentialing) plus provider totals, follow-up counts (overdue/due today/upcoming/completed), credentialing breakdown by status, 6-month activity trend, and top 5 payers by volume. Powers every Dashboard card and chart. |
 | GET | `/reports/summary` | authenticated | Practice/provider totals, credentialing by status, top 5 payers by volume. |
+| GET | `/reports/export` | authenticated | Full CSV download (`text/csv`, attachment filename `reports-YYYY-MM-DD.csv`). Sections: summary counts, practices, providers, credentialing records. |
 
 ## AI Assistant
 
@@ -90,8 +98,8 @@ after login — see `frontend/src/api/client.ts`).
 
 | Method | Path | Access | Notes |
 |---|---|---|---|
-| GET | `/settings` | authenticated | Single org-wide row, created lazily on first access. |
-| PATCH | `/settings` | admin | `orgName`, `timezone`, `contactEmail`, `sessionTimeoutMinutes`, `notifyOnOverdueFollowUps`. |
+| GET | `/settings` | authenticated | Single org-wide row, created lazily on first access. `contactEmail` is used as the fallback recipient for follow-up notification digests. |
+| PATCH | `/settings` | admin | `orgName`, `timezone`, `contactEmail`, `sessionTimeoutMinutes`, `notifyOnOverdueFollowUps` (toggle for the notification digest). |
 
 ## Health
 

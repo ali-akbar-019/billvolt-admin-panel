@@ -17,6 +17,10 @@ Backend → Render, frontend → Vercel, per the original tech stack.
    - `REDIS_URL` — optional; without it, sessions/rate-limit-backed features
      degrade gracefully but still work (see `SECURITY.md`)
    - `CLIENT_URL` — your Vercel URL, once you have it (needed for CORS)
+   - Optional, for live follow-up notification emails: `EMAIL_ENABLED=true`
+     plus `SMTP_HOST`, `SMTP_PORT` (587), `SMTP_SECURE=false`, `SMTP_USER`,
+     `SMTP_PASS`, `SMTP_FROM`. If you skip these, the app still works — the
+     digest is logged to the console instead of emailed.
 5. Health check is wired to `/api/health` — Render will restart the service
    if it stops responding there.
 

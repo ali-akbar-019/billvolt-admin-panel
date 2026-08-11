@@ -99,9 +99,15 @@ states, BillVolt keeps every provider, payer, and follow-up current and auditabl
 
 **Reports** (`/reports`)
 - Practice/provider totals, credentialing-by-status bars, and top payers.
+- "Export CSV" button downloads the full report (summary counts, practices,
+  providers, credentialing records) from `GET /api/reports/export`.
 
 **AI Assistant** (`/ai-assistant`)
 - Pattern-matching answers against real portal data (see [AI Assistant](#ai-assistant)).
+
+**Audit log** (`/audit-log`, admin)
+- Filterable, paginated history of record changes, sensitive-data reveals,
+  settings updates, and notification sends — who, what, when, and from which IP.
 
 **Settings** (`/settings`, admin)
 - Org name, timezone, contact email, session timeout, and overdue follow-up
@@ -109,7 +115,13 @@ states, BillVolt keeps every provider, payer, and follow-up current and auditabl
 
 ## Notifications
 
-A bell in the top bar surfaces today's follow-ups.
+- A bell in the top bar surfaces today's follow-ups.
+- Follow-up due-date digests: when a follow-up is created/updated to be due
+  today or overdue (and the "notify on overdue follow-ups" setting is on), a
+  digest email is sent to the assigned user (falling back to the org contact
+  email). SMTP is configured via env vars; **if not configured, the digest is
+  logged to the console instead**, so it works locally with zero setup. Admins
+  can re-send via `POST /api/followups/notify`.
 
 ---
 
@@ -264,6 +276,7 @@ Runs against an in-memory MongoDB — no real database or Redis required. See
 | `JWT_REFRESH_SECRET` | yes | Signs refresh tokens (different string) |
 | `FIELD_ENCRYPTION_KEY` | yes | Encrypts SSN / CAQH credentials at rest |
 | `CLIENT_URL` | no | Frontend origin for CORS (default `http://localhost:5173`) |
+| `EMAIL_ENABLED` / `SMTP_HOST` / `SMTP_PORT` / `SMTP_SECURE` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | no | Follow-up notification emails. If `EMAIL_ENABLED` isn't `true` or SMTP credentials are missing, emails are logged to the console instead of sent — the app keeps working with zero config. |
 | `ADMIN_NAME` / `ADMIN_EMAIL` / `ADMIN_PASSWORD` | no | Used only by `npm run seed:admin` |
 
 ### Frontend (`frontend/.env`)
@@ -308,9 +321,10 @@ once logged in. The full endpoint reference is in [`API_REFERENCE.md`](API_REFER
 | Providers | `GET/POST /providers`, `GET/PATCH/DELETE /providers/:id`, `GET /providers/:id/sensitive` | authenticated (delete & sensitive = admin) |
 | Credentialing | `GET/POST /credentialing`, `GET/PATCH/DELETE /credentialing/:id` | authenticated (delete = admin) |
 | Timeline | `GET/POST /timeline`, `DELETE /timeline/:id` | authenticated (delete = admin) |
-| Follow-ups | `GET /followups`, `GET /followups/counts`, `GET/POST /followups`, `PATCH/DELETE /followups/:id` | authenticated (delete = admin) |
+| Follow-ups | `GET /followups`, `GET /followups/counts`, `GET/POST /followups`, `POST /followups/notify` (admin), `PATCH/DELETE /followups/:id` | authenticated (delete & notify = admin) |
+| Audit log | `GET /audit-logs` | admin |
 | Dashboard | `GET /dashboard/summary` | authenticated |
-| Reports | `GET /reports/summary` | authenticated |
+| Reports | `GET /reports/summary`, `GET /reports/export` (CSV) | authenticated |
 | AI Assistant | `POST /ai/query` | authenticated |
 | Settings | `GET /settings`, `PATCH /settings` | authenticated (patch = admin) |
 | Health | `GET /health` | public |
@@ -389,6 +403,8 @@ Step-by-step instructions: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | `DEPLOYMENT.md` | Render + Vercel deployment walkthrough |
 | `QA_CHECKLIST.md` | Automated test coverage + manual QA walkthrough |
 | `PRESENTATION.md` | Project summary, key decisions, and known limitations |
+| `PROGRESS.md` | What's built, what's missing, commands, and gotchas |
+| `FEATURE_PLAN.md` | Phase 5 feature specs (audit log, CSV export, notifications) |
 
 ---
 
@@ -403,8 +419,8 @@ Step-by-step instructions: [`DEPLOYMENT.md`](DEPLOYMENT.md).
 | 5 | Audit log admin screen, report CSV export, follow-up email notifications | ✅ Done |
 
 Deferred (documented in `PRESENTATION.md`): per-document file storage, archived
-reports with date-range pickers, and SMS follow-up notifications (email digest is
-live — see below).
+reports with date-range pickers, and SMS follow-up notifications (the email
+digest is live — see [Notifications](#notifications)).
 
 ---
 

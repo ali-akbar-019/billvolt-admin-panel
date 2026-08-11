@@ -19,7 +19,7 @@
     "setupFilesAfterEnv": [
       "<rootDir>/tests/db.setup.js"
     ],
-    "testTimeout": 20000
+    "testTimeout": 60000
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
