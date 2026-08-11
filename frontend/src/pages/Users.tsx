@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Building2 } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { AddUserModal } from '../components/AddUserModal';
-import type { User } from '../types';
+import type { User, Practice } from '../types';
 
 const roleBadge = (role: string) => ({
   background: role === 'admin' ? 'var(--accent-tint)' : 'var(--status-not-started-tint)',
@@ -24,6 +24,8 @@ export function Users() {
   const { user: currentUser } = useAuth();
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
+  const [practices, setPractices] = useState<Practice[]>([]);
+  const [assigningId, setAssigningId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -39,7 +41,14 @@ export function Users() {
 
   useEffect(fetchUsers, []);
 
-  const updateUser = async (id: string, payload: Partial<Pick<User, 'role' | 'status'>>) => {
+  useEffect(() => {
+    apiClient
+      .get('/practices', { params: { limit: 100 } })
+      .then((res) => setPractices(res.data.practices))
+      .catch(() => showToast('Could not load practices for assignment', 'error'));
+  }, []);
+
+  const updateUser = async (id: string, payload: Partial<Pick<User, 'role' | 'status' | 'assignedPracticeIds'>>) => {
     setBusyId(id);
     try {
       const res = await apiClient.patch(`/users/${id}`, payload);
@@ -50,6 +59,16 @@ export function Users() {
     } finally {
       setBusyId(null);
     }
+  };
+
+  const togglePractice = (userId: string, practiceId: string) => {
+    const target = users.find((u) => u._id === userId);
+    if (!target) return;
+    const current = target.assignedPracticeIds || [];
+    const next = current.includes(practiceId)
+      ? current.filter((p) => p !== practiceId)
+      : [...current, practiceId];
+    updateUser(userId, { assignedPracticeIds: next });
   };
 
   const deleteUser = async (id: string) => {
@@ -94,7 +113,7 @@ export function Users() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Name', 'Email', 'Role', 'Status', 'Last login', ''].map((h) => (
+                  {['Name', 'Email', 'Role', 'Practices', 'Status', 'Last login', ''].map((h) => (
                     <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
                       {h}
                     </th>
@@ -117,6 +136,71 @@ export function Users() {
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
                       </select>
+                    </td>
+                    <td style={{ padding: '14px 20px' }}>
+                      {u.role === 'admin' ? (
+                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>All practices</span>
+                      ) : (
+                        <div style={{ position: 'relative' }}>
+                          <button
+                            disabled={busyId === u._id}
+                            onClick={() => setAssigningId(assigningId === u._id ? null : u._id)}
+                            style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)',
+                              border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 10px',
+                              fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', cursor: 'pointer',
+                            }}
+                          >
+                            <Building2 size={14} />
+                            {(u.assignedPracticeIds || []).length} assigned
+                          </button>
+
+                          {assigningId === u._id && (
+                            <div
+                              className="surface-card"
+                              style={{
+                                position: 'absolute', left: 0, top: '100%', marginTop: 6, zIndex: 30,
+                                width: 280, maxWidth: '90vw', maxHeight: 260, overflowY: 'auto', padding: 12, boxShadow: '0 8px 28px rgba(16,22,43,0.18)',
+                              }}
+                            >
+                              <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '0 0 10px' }}>
+                                Assign practices
+                              </p>
+                              {practices.length === 0 ? (
+                                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>No practices yet.</p>
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  {practices.map((p) => {
+                                    const checked = (u.assignedPracticeIds || []).includes(p._id);
+                                    return (
+                                      <label
+                                        key={p._id}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 6px', borderRadius: 6, cursor: 'pointer', fontSize: 13.5 }}
+                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-tint)')}
+                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={checked}
+                                          onChange={() => togglePractice(u._id, p._id)}
+                                          style={{ accentColor: 'var(--accent)' }}
+                                        />
+                                        {p.groupName}
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                              <button
+                                onClick={() => setAssigningId(null)}
+                                style={{ marginTop: 10, width: '100%', padding: '8px', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer' }}
+                              >
+                                Done
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </td>
                     <td style={{ padding: '14px 20px' }}>
                       <button

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { X } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
-import type { User } from '../types';
+import type { User, Practice } from '../types';
 
 interface AddUserModalProps {
   onClose: () => void;
@@ -16,8 +16,23 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'admin' | 'staff'>('staff');
+  const [assignedPracticeIds, setAssignedPracticeIds] = useState<string[]>([]);
+  const [practices, setPractices] = useState<Practice[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    apiClient
+      .get('/practices', { params: { limit: 100 } })
+      .then((res) => setPractices(res.data.practices))
+      .catch(() => showToast('Could not load practices', 'error'));
+  }, []);
+
+  const togglePractice = (practiceId: string) => {
+    setAssignedPracticeIds((prev) =>
+      prev.includes(practiceId) ? prev.filter((p) => p !== practiceId) : [...prev, practiceId]
+    );
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -25,7 +40,13 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
     setIsSubmitting(true);
 
     try {
-      const res = await apiClient.post('/auth/register', { name, email, password, role });
+      const res = await apiClient.post('/auth/register', {
+        name,
+        email,
+        password,
+        role,
+        ...(role === 'staff' ? { assignedPracticeIds } : {}),
+      });
       onCreated(res.data.user);
       showToast(`${name} was added to the team`);
       onClose();
@@ -76,6 +97,32 @@ export function AddUserModal({ onClose, onCreated }: AddUserModalProps) {
               <option value="admin">Admin</option>
             </select>
           </div>
+
+          {role === 'staff' && (
+            <div>
+              <label style={labelStyle}>Practices this user can see</label>
+              <div
+                className="surface-card"
+                style={{ border: '1px solid var(--border)', padding: '8px 10px', borderRadius: 'var(--radius)', maxHeight: 160, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 2 }}
+              >
+                {practices.length === 0 ? (
+                  <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>No practices yet.</p>
+                ) : (
+                  practices.map((p) => (
+                    <label key={p._id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px', borderRadius: 6, cursor: 'pointer', fontSize: 13.5 }}>
+                      <input
+                        type="checkbox"
+                        checked={assignedPracticeIds.includes(p._id)}
+                        onChange={() => togglePractice(p._id)}
+                        style={{ accentColor: 'var(--accent)' }}
+                      />
+                      {p.groupName}
+                    </label>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
 
           {error && <p style={{ fontSize: 13, color: 'var(--status-denied)', margin: 0 }}>{error}</p>}
 
