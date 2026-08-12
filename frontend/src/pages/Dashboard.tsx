@@ -13,9 +13,22 @@ import {
   TrendingUp,
   Sparkles,
 } from 'lucide-react';
+import {
+  Area,
+  AreaChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { STATUS_LABEL, statusColors } from '../constants/credentialing';
+import { STATUS_LABEL } from '../constants/credentialing';
 import type { CredentialingStatus } from '../types';
 
 interface TrendPoint {
@@ -46,6 +59,21 @@ const STATUS_ORDER: CredentialingStatus[] = [
   'denied',
   'expired',
 ];
+
+const STATUS_HEX: Record<CredentialingStatus, string> = {
+  not_started: '#7B8296',
+  in_progress: '#D97706',
+  submitted: '#7C5CFC',
+  approved: '#1D9E75',
+  denied: '#E24B4A',
+  expired: '#92621B',
+};
+
+const CHART_ACCENT = '#2954E0';
+const CHART_APPROVED = '#1D9E75';
+const CHART_SUBMITTED = '#7C5CFC';
+const CHART_GRID = 'rgba(11, 14, 26, 0.08)';
+const CHART_TICK = '#7B8296';
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -128,9 +156,13 @@ export function Dashboard() {
   const statusEntries = STATUS_ORDER.filter((s) => (summary.credentialingByStatus[s] ?? 0) > 0)
     .map((s) => [s, summary.credentialingByStatus![s] as number] as [CredentialingStatus, number]);
 
-  const maxStatus = Math.max(1, ...statusEntries.map(([, c]) => c));
-  const maxPayer = Math.max(1, ...summary.topPayers.map((p) => p.count));
-  const maxTrend = Math.max(1, ...summary.trendByMonth.map((t) => Math.max(t.created, t.approved)));
+  const statusData = statusEntries.map(([status, count]) => ({
+    label: STATUS_LABEL[status],
+    count,
+    color: STATUS_HEX[status],
+  }));
+
+  const payerData = summary.topPayers.map((p) => ({ payerName: p.payerName, count: p.count }));
 
   const followUpBuckets = [
     { key: 'overdue', label: 'Overdue', icon: AlertTriangle, tint: 'var(--status-denied)', count: summary.followUps.overdue },
@@ -202,24 +234,20 @@ export function Dashboard() {
                 Open grid <ArrowRight size={14} />
               </Link>
             </div>
-            {statusEntries.length === 0 ? (
+            {statusData.length === 0 ? (
               <EmptyNote text="Add a payer record to start the pipeline." />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {statusEntries.map(([status, count]) => {
-                  const { color } = statusColors(status);
-                  return (
-                    <div key={status}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>{STATUS_LABEL[status]}</span>
-                        <span className="tabular-nums" style={{ fontWeight: 700, color }}>{count}</span>
-                      </div>
-                      <div style={{ height: 9, borderRadius: 5, background: 'var(--bg-surface-2)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${(count / maxStatus) * 100}%`, background: color, borderRadius: 5, transition: 'width 0.3s ease' }} />
-                      </div>
-                    </div>
-                  );
-                })}
+              <div style={{ height: Math.max(170, statusData.length * 42) }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={statusData} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
+                    <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} />
+                    <YAxis type="category" dataKey="label" width={96} axisLine={false} tickLine={false} tick={{ fontSize: 12.5, fill: CHART_TICK }} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(11, 14, 26, 0.04)' }} />
+                    <Bar dataKey="count" name="Records" radius={[0, 5, 5, 0]} barSize={16}>
+                      {statusData.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -232,28 +260,28 @@ export function Dashboard() {
             {summary.trendByMonth.every((t) => t.created === 0 && t.approved === 0) ? (
               <EmptyNote text="No activity recorded in the last 6 months yet." />
             ) : (
-              <div>
-                <div style={{ height: 190, display: 'flex', alignItems: 'flex-end', gap: 8, paddingTop: 4 }}>
-                  {summary.trendByMonth.map((t) => (
-                    <div key={t.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, height: '100%' }}>
-                      <div style={{ flex: 1, width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 4 }}>
-                        <div
-                          title={`${t.month}: ${t.created} created`}
-                          style={{ width: 14, maxWidth: '38%', height: `${Math.max(3, (t.created / maxTrend) * 100)}%`, background: 'var(--accent)', borderRadius: '4px 4px 0 0' }}
-                        />
-                        <div
-                          title={`${t.month}: ${t.approved} approved`}
-                          style={{ width: 14, maxWidth: '38%', height: t.approved === 0 ? 3 : `${(t.approved / maxTrend) * 100}%`, background: 'var(--status-approved)', borderRadius: '4px 4px 0 0' }}
-                        />
-                      </div>
-                      <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{t.month}</span>
-                    </div>
-                  ))}
-                </div>
-                <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 10 }}>
-                  <LegendDot color="var(--accent)" label="Created" />
-                  <LegendDot color="var(--status-approved)" label="Approved" />
-                </div>
+              <div style={{ height: 240 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={summary.trendByMonth} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
+                    <defs>
+                      <linearGradient id="trendCreated" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_ACCENT} stopOpacity={0.22} />
+                        <stop offset="100%" stopColor={CHART_ACCENT} stopOpacity={0.02} />
+                      </linearGradient>
+                      <linearGradient id="trendApproved" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={CHART_APPROVED} stopOpacity={0.22} />
+                        <stop offset="100%" stopColor={CHART_APPROVED} stopOpacity={0.02} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} width={34} />
+                    <Tooltip content={<ChartTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 12.5 }} iconType="square" iconSize={9} />
+                    <Area type="monotone" dataKey="created" name="Created" stroke={CHART_ACCENT} strokeWidth={2.5} fill="url(#trendCreated)" dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                    <Area type="monotone" dataKey="approved" name="Approved" stroke={CHART_APPROVED} strokeWidth={2.5} fill="url(#trendApproved)" dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -261,21 +289,26 @@ export function Dashboard() {
           {/* Top payers */}
           <div className="surface-card" style={{ padding: 24 }}>
             <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 18px' }}>Top payers by volume</p>
-            {summary.topPayers.length === 0 ? (
+            {payerData.length === 0 ? (
               <EmptyNote text="No payer records yet." />
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                {summary.topPayers.map((p) => (
-                  <div key={p.payerName}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 5 }}>
-                      <span style={{ color: 'var(--text-secondary)' }}>{p.payerName}</span>
-                      <span className="tabular-nums" style={{ fontWeight: 700 }}>{p.count}</span>
-                    </div>
-                    <div style={{ height: 9, borderRadius: 5, background: 'var(--bg-surface-2)', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${(p.count / maxPayer) * 100}%`, background: 'var(--status-submitted)', borderRadius: 5 }} />
-                    </div>
-                  </div>
-                ))}
+              <div style={{ height: 210 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={payerData} margin={{ top: 6, right: 8, bottom: 0, left: -14 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
+                    <XAxis
+                      dataKey="payerName"
+                      axisLine={false}
+                      tickLine={false}
+                      interval={0}
+                      tick={{ fontSize: 11, fill: CHART_TICK }}
+                      tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)}
+                    />
+                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} width={32} />
+                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(11, 14, 26, 0.04)' }} />
+                    <Bar dataKey="count" name="Records" fill={CHART_SUBMITTED} radius={[5, 5, 0, 0]} barSize={26} maxBarSize={34} />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             )}
           </div>
@@ -334,12 +367,36 @@ function QuickLink({ to, icon: Icon, children }: { to: string; icon: typeof Arro
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+interface TooltipEntry {
+  name?: string;
+  value?: number | string;
+  color?: string;
+  stroke?: string;
+  fill?: string;
+}
+
+function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string }) {
+  if (!active || !payload?.length) return null;
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12.5, color: 'var(--text-muted)' }}>
-      <span style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
-      {label}
-    </span>
+    <div
+      style={{
+        background: '#fff',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        boxShadow: 'var(--shadow-card)',
+        padding: '10px 14px',
+        fontSize: 13,
+        minWidth: 120,
+      }}
+    >
+      <p style={{ fontWeight: 600, margin: '0 0 6px' }}>{label}</p>
+      {payload.map((entry) => (
+        <p key={entry.name} style={{ margin: '2px 0', color: 'var(--text-secondary)' }}>
+          <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: entry.color || entry.stroke || entry.fill, marginRight: 7 }} />
+          {entry.name}: <strong className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{entry.value}</strong>
+        </p>
+      ))}
+    </div>
   );
 }
 

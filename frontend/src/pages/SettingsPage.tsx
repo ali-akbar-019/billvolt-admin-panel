@@ -112,7 +112,7 @@ export function SettingsPage() {
             className="input-control"
           />
           <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            Displayed as policy; not yet wired to session expiry enforcement.
+            Users are automatically signed out after this many minutes of inactivity.
           </p>
         </div>
 

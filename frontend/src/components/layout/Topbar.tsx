@@ -4,10 +4,11 @@ import { NotificationBell } from './NotificationBell';
 
 interface TopbarProps {
   onMenuClick?: () => void;
+  onLogoutClick?: () => void;
 }
 
-export function Topbar({ onMenuClick }: TopbarProps) {
-  const { user, logout } = useAuth();
+export function Topbar({ onMenuClick, onLogoutClick }: TopbarProps) {
+  const { user } = useAuth();
 
   const initials = user?.name
     ?.split(' ')
@@ -69,8 +70,9 @@ export function Topbar({ onMenuClick }: TopbarProps) {
           </div>
         </div>
         <button
-          onClick={() => logout()}
+          onClick={onLogoutClick}
           aria-label="Log out"
+          title="Log out"
           style={{
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius)',

@@ -14,6 +14,10 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 ### Auth, roles & users
 - [x] Cookie-based JWT auth with automatic access-token refresh (`frontend/src/api/client.ts`)
   and login rate limiting (10 attempts / 15 min).
+- [x] Logout UX: clicking the topbar logout opens a confirmation dialog with a
+  15s auto-logout countdown (`frontend/src/components/layout/LogoutDialog.tsx`);
+  idle sessions auto-logout after `sessionTimeoutMinutes` (30s countdown warning)
+  via `frontend/src/hooks/useSessionTimeout.ts`.
 - [x] Two roles: `admin` and `staff`. Admin-only areas guarded both in the
   frontend routes (`ProtectedRoute allowedRoles`) and backend middleware.
 - [x] User management (`/users`, admin): create, change role, enable/disable,
@@ -29,7 +33,9 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
   credentialing, open follow-ups — each links to its page.
 - [x] Credentialing pipeline chart (by status), 6-month activity trend
   (created vs. approved), top payers by volume, follow-up queue
-  (overdue / due today / upcoming). Pure CSS — no chart library.
+  (overdue / due today / upcoming). **Real charts via `recharts`** (horizontal
+  pipeline bars, activity area chart, payer bars) with tooltips + legend; the
+  chart bundle is code-split into its own chunk.
 - [x] Quick links to Reports and AI Assistant.
 
 ### Practices (`/practices`, `/practices/:id`)
@@ -163,7 +169,8 @@ page is done. Known gaps are listed under [Missing / not yet built](#missing--no
 | Document repository (file upload & versioning) | Placeholder only | Practice workspace "Documents" tab is a placeholder; W-9s, licenses, payer contracts not stored. Needs storage scope (S3/GridFS) + upload UI. |
 | Archived reports / date-range pickers | Partial | CSV export done (`/api/reports/export` + "Export CSV" button); still no on-screen date-range/archived report picker. |
 | Email / SMS follow-up notifications | Email done | Nodemailer digest for overdue/due-today (console fallback when unconfigured); SMS transport still not built. |
-| Session timeout enforcement | Policy only | `sessionTimeoutMinutes` is displayed but not wired to session expiry. |
+| Session timeout enforcement | Done | Idle sessions auto-logout after the configured `sessionTimeoutMinutes` (frontend idle timer + auto-logout dialog). |
+| Global thin scrollbars | Done | `index.css` now styles every scrollbar (8px, rounded thumb) cross-browser. |
 | Frontend automated tests | Not built | No Vitest/Testing Library setup. |
 | Paginated "load more" UX | N/A | Backend paginates; list pages currently fetch with large `limit` and render all. |
 | Audit log UI | Done | Admin screen at `/audit-log` with filters + pagination (see above). |
@@ -209,10 +216,9 @@ npm run preview
 
 1. **Document repository** — pick storage (S3 or GridFS), build upload/list UI in
    the Practice workspace, wire to backend.
-2. **Session timeout enforcement** — apply the configured minutes to access-token
-   lifetime / idle check.
-3. **Reports date-range / archived picker** — on-screen filter + per-period CSV
-   on top of the existing export.
-4. **SMS notifications** — transport behind the existing follow-up setting
+2. **Reports date-range / archived picker** — on-screen filter + per-period CSV
+   on top of the existing export; swap the CSS bars on the Reports page for
+   `recharts` charts (dashboard already upgraded).
+3. **SMS notifications** — transport behind the existing follow-up setting
    (email digest already built).
-5. **Frontend test setup** — Vitest + React Testing Library smoke tests.
+4. **Frontend test setup** — Vitest + React Testing Library smoke tests.
