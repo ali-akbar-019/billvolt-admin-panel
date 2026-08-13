@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, CalendarClock, ChevronRight, Clock3 } from 'lucide-react';
+import {
+  Bell,
+  CalendarClock,
+  ChevronRight,
+  Clock3,
+} from 'lucide-react';
 import { apiClient } from '../../api/client';
 
 interface FollowUp {
@@ -12,11 +18,66 @@ interface FollowUp {
 
 export function NotificationBell() {
   const navigate = useNavigate();
+
   const [isOpen, setIsOpen] = useState(false);
   const [items, setItems] = useState<FollowUp[]>([]);
   const [count, setCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(false);
+  const [dropdownTop, setDropdownTop] = useState(0);
+
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  /* ---------------------------------------------------------
+     Responsive breakpoint
+  --------------------------------------------------------- */
+
+  useEffect(() => {
+    const updateViewport = () => {
+      setIsMobile(window.innerWidth <= 600);
+    };
+
+    updateViewport();
+
+    window.addEventListener('resize', updateViewport);
+
+    return () => {
+      window.removeEventListener('resize', updateViewport);
+    };
+  }, []);
+
+  /* ---------------------------------------------------------
+     Keep mobile dropdown positioned below the trigger
+  --------------------------------------------------------- */
+
+  const updateDropdownPosition = () => {
+    if (!triggerRef.current) return;
+
+    const rect = triggerRef.current.getBoundingClientRect();
+
+    setDropdownTop(rect.bottom + 10);
+  };
+
+  useEffect(() => {
+    if (!isOpen || !isMobile) return;
+
+    updateDropdownPosition();
+
+    const handleResize = () => {
+      updateDropdownPosition();
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [isOpen, isMobile]);
+
+  /* ---------------------------------------------------------
+     Notification count
+  --------------------------------------------------------- */
 
   const refreshCount = () => {
     apiClient
@@ -35,28 +96,52 @@ export function NotificationBell() {
     return () => clearInterval(interval);
   }, []);
 
+  /* ---------------------------------------------------------
+     Click outside
+  --------------------------------------------------------- */
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (
+        wrapperRef.current &&
+        !wrapperRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
 
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
+
+  /* ---------------------------------------------------------
+     Open notifications
+  --------------------------------------------------------- */
 
   const toggleOpen = () => {
     if (!isOpen) {
+      if (isMobile) {
+        updateDropdownPosition();
+      }
+
       setIsLoading(true);
 
       Promise.all([
         apiClient.get('/followups', {
-          params: { bucket: 'overdue', limit: 5 },
+          params: {
+            bucket: 'overdue',
+            limit: 5,
+          },
         }),
+
         apiClient.get('/followups', {
-          params: { bucket: 'today', limit: 5 },
+          params: {
+            bucket: 'today',
+            limit: 5,
+          },
         }),
       ])
         .then(([overdue, today]) => {
@@ -76,13 +161,40 @@ export function NotificationBell() {
     setIsOpen((value) => !value);
   };
 
-  const overdueItems = items.filter((item) => item.daysOverdue);
-  const todayItems = items.filter((item) => !item.daysOverdue);
+  const overdueItems = items.filter(
+    (item) => Boolean(item.daysOverdue)
+  );
+
+  const todayItems = items.filter(
+    (item) => !item.daysOverdue
+  );
+
+  /* ---------------------------------------------------------
+     Dropdown responsive styles
+  --------------------------------------------------------- */
+
+  const dropdownStyle: CSSProperties = {
+    ...styles.dropdown,
+
+    ...(isMobile
+      ? {
+        position: 'fixed',
+        top: dropdownTop,
+        left: 12,
+        right: 12,
+        width: 'auto',
+        maxWidth: 'none',
+        maxHeight: 'calc(100vh - 90px)',
+      }
+      : {}),
+  };
 
   return (
-    <div ref={ref} style={styles.wrapper}>
+    <div ref={wrapperRef} style={styles.wrapper}>
       {/* Notification trigger */}
+
       <button
+        ref={triggerRef}
         onClick={toggleOpen}
         aria-label="Notifications"
         aria-expanded={isOpen}
@@ -92,8 +204,10 @@ export function NotificationBell() {
         }}
         onMouseEnter={(e) => {
           if (!isOpen) {
-            e.currentTarget.style.background = 'var(--bg-surface-2)';
-            e.currentTarget.style.borderColor = 'var(--border-strong)';
+            e.currentTarget.style.background =
+              'var(--bg-surface-2)';
+            e.currentTarget.style.borderColor =
+              'var(--border-strong)';
           }
         }}
         onMouseLeave={(e) => {
@@ -107,28 +221,42 @@ export function NotificationBell() {
           size={17}
           strokeWidth={1.9}
           style={{
-            transform: isOpen ? 'rotate(-8deg)' : 'none',
+            transform: isOpen
+              ? 'rotate(-8deg)'
+              : 'none',
             transition: 'transform 160ms ease',
           }}
         />
 
         {count > 0 && (
-          <span className="tabular-nums" style={styles.badge}>
+          <span
+            className="tabular-nums"
+            style={styles.badge}
+          >
             {count > 9 ? '9+' : count}
           </span>
         )}
       </button>
 
       {/* Dropdown */}
+
       {isOpen && (
-        <div className="surface-card" style={styles.dropdown}>
+        <div
+          className="surface-card"
+          style={dropdownStyle}
+        >
           {/* Header */}
+
           <div style={styles.header}>
-            <div>
-              <h3 style={styles.title}>Notifications</h3>
+            <div style={styles.headerText}>
+              <h3 style={styles.title}>
+                Notifications
+              </h3>
+
               <p style={styles.subtitle}>
                 {count > 0
-                  ? `${count} item${count === 1 ? '' : 's'} need attention`
+                  ? `${count} item${count === 1 ? '' : 's'
+                  } need attention`
                   : 'Everything is up to date'}
               </p>
             </div>
@@ -141,27 +269,38 @@ export function NotificationBell() {
           <div style={styles.divider} />
 
           {/* Content */}
+
           <div style={styles.content}>
             {isLoading ? (
               <div style={styles.loading}>
                 <div style={styles.spinner} />
-                <span>Checking follow-ups…</span>
+
+                <span>
+                  Checking follow-ups…
+                </span>
               </div>
             ) : items.length === 0 ? (
               <div style={styles.empty}>
                 <div style={styles.emptyIcon}>
-                  <Bell size={20} strokeWidth={1.7} />
+                  <Bell
+                    size={20}
+                    strokeWidth={1.7}
+                  />
                 </div>
 
-                <p style={styles.emptyTitle}>You're all caught up</p>
+                <p style={styles.emptyTitle}>
+                  You're all caught up
+                </p>
 
                 <p style={styles.emptyText}>
-                  There are no overdue or due-today follow-ups.
+                  There are no overdue or due-today
+                  follow-ups.
                 </p>
               </div>
             ) : (
               <>
                 {/* Overdue */}
+
                 {overdueItems.length > 0 && (
                   <NotificationSection
                     title="Overdue"
@@ -173,6 +312,7 @@ export function NotificationBell() {
                 )}
 
                 {/* Today */}
+
                 {todayItems.length > 0 && (
                   <NotificationSection
                     title="Due today"
@@ -187,6 +327,7 @@ export function NotificationBell() {
           </div>
 
           {/* Footer */}
+
           <div style={styles.footer}>
             <button
               onClick={() => {
@@ -195,13 +336,18 @@ export function NotificationBell() {
               }}
               style={styles.viewAllButton}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--accent-tint)';
+                e.currentTarget.style.background =
+                  'var(--accent-tint)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
+                e.currentTarget.style.background =
+                  'transparent';
               }}
             >
-              <span>View all follow-ups</span>
+              <span>
+                View all follow-ups
+              </span>
+
               <ChevronRight size={15} />
             </button>
           </div>
@@ -211,9 +357,13 @@ export function NotificationBell() {
   );
 }
 
+/* ============================================================
+   Notification Section
+============================================================ */
+
 interface NotificationSectionProps {
   title: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
   count: number;
   tone: 'danger' | 'accent';
   items: FollowUp[];
@@ -251,7 +401,9 @@ function NotificationSection({
             {icon}
           </span>
 
-          <span style={styles.sectionTitle}>{title}</span>
+          <span style={styles.sectionTitle}>
+            {title}
+          </span>
 
           <span
             className="tabular-nums"
@@ -272,7 +424,9 @@ function NotificationSection({
             <div style={styles.itemDot} />
 
             <div style={styles.itemContent}>
-              <p style={styles.itemTitle}>{item.title}</p>
+              <p style={styles.itemTitle}>
+                {item.title}
+              </p>
 
               <p
                 style={{
@@ -283,7 +437,9 @@ function NotificationSection({
                 }}
               >
                 {item.daysOverdue
-                  ? `${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'
+                  ? `${item.daysOverdue} day${item.daysOverdue === 1
+                    ? ''
+                    : 's'
                   } overdue`
                   : 'Due today'}
               </p>
@@ -295,15 +451,22 @@ function NotificationSection({
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
+/* ============================================================
+   Styles
+============================================================ */
+
+const styles: Record<string, CSSProperties> = {
   wrapper: {
     position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
   },
 
   trigger: {
     position: 'relative',
     width: 36,
     height: 36,
+    flexShrink: 0,
     border: '1px solid var(--border)',
     borderRadius: 'var(--radius)',
     background: 'transparent',
@@ -313,7 +476,8 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'background 150ms ease, border-color 150ms ease',
+    transition:
+      'background 150ms ease, border-color 150ms ease',
   },
 
   triggerActive: {
@@ -339,25 +503,35 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '0 4px',
     border: '2px solid var(--bg-surface)',
     lineHeight: 1,
+    boxSizing: 'border-box',
   },
 
   dropdown: {
     position: 'absolute',
     right: 0,
     top: 'calc(100% + 10px)',
-    width: 'min(360px, calc(100vw - 32px))',
+    width: 360,
+    maxWidth: 'calc(100vw - 24px)',
     padding: 0,
-    zIndex: 50,
+    zIndex: 1000,
     overflow: 'hidden',
-    boxShadow: '0 14px 38px rgba(16, 22, 43, 0.14)',
+    boxShadow:
+      '0 14px 38px rgba(16, 22, 43, 0.14)',
     border: '1px solid var(--border)',
+    boxSizing: 'border-box',
   },
 
   header: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 12,
     padding: '16px 16px 14px',
+  },
+
+  headerText: {
+    minWidth: 0,
+    flex: 1,
   },
 
   title: {
@@ -372,11 +546,13 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '3px 0 0',
     fontSize: 12.5,
     color: 'var(--text-muted)',
+    lineHeight: 1.4,
   },
 
   headerIcon: {
     width: 32,
     height: 32,
+    flexShrink: 0,
     borderRadius: 9,
     background: 'var(--accent-tint)',
     color: 'var(--accent)',
@@ -394,6 +570,7 @@ const styles: Record<string, React.CSSProperties> = {
     maxHeight: 390,
     overflowY: 'auto',
     padding: '12px 10px',
+    overscrollBehavior: 'contain',
   },
 
   section: {
@@ -408,11 +585,13 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     gap: 7,
+    minWidth: 0,
   },
 
   sectionIcon: {
     width: 25,
     height: 25,
+    flexShrink: 0,
     borderRadius: 7,
     display: 'flex',
     alignItems: 'center',
@@ -430,6 +609,7 @@ const styles: Record<string, React.CSSProperties> = {
   sectionCount: {
     minWidth: 20,
     height: 20,
+    flexShrink: 0,
     borderRadius: 10,
     display: 'flex',
     alignItems: 'center',
@@ -448,6 +628,7 @@ const styles: Record<string, React.CSSProperties> = {
   item: {
     display: 'flex',
     gap: 10,
+    minWidth: 0,
     padding: '10px 9px',
     borderRadius: 9,
     transition: 'background 120ms ease',
@@ -456,15 +637,16 @@ const styles: Record<string, React.CSSProperties> = {
   itemDot: {
     width: 6,
     height: 6,
+    flexShrink: 0,
     borderRadius: '50%',
     background: 'var(--accent)',
     marginTop: 6,
-    flexShrink: 0,
   },
 
   itemContent: {
     minWidth: 0,
     flex: 1,
+    overflow: 'hidden',
   },
 
   itemTitle: {
@@ -482,6 +664,7 @@ const styles: Record<string, React.CSSProperties> = {
     margin: '3px 0 0',
     fontSize: 11.5,
     fontWeight: 500,
+    lineHeight: 1.4,
   },
 
   loading: {
@@ -545,6 +728,7 @@ const styles: Record<string, React.CSSProperties> = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
     padding: '9px 10px',
     border: 'none',
     borderRadius: 8,
