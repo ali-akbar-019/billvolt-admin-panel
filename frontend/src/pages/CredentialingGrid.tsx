@@ -1,21 +1,20 @@
-import { useEffect, useState } from 'react';
 import {
-  Plus,
-  Search,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
   Pencil,
-  SlidersHorizontal,
-  ArrowUpRight,
+  Plus,
+  Search,
+  SlidersHorizontal
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { apiClient } from '../api/client';
-import { useToast } from '../context/ToastContext';
 import { CredentialingFormModal } from '../components/CredentialingFormModal';
 import {
   STATUS_OPTIONS,
   statusColors,
 } from '../constants/credentialing';
+import { useToast } from '../context/ToastContext';
 import type {
   CredentialingRecord,
   CredentialingStatus,
@@ -143,7 +142,7 @@ export function CredentialingGrid() {
 
   const activeCount = records.filter(
     (record) =>
-      record.status === 'active' ||
+      record.status === 'in_progress' ||
       record.status === 'approved'
   ).length;
 
@@ -485,7 +484,6 @@ export function CredentialingGrid() {
 function Status({
   status,
   value,
-  label,
   onChange,
 }: {
   status: string;
@@ -493,7 +491,7 @@ function Status({
   label: string;
   onChange: (status: CredentialingStatus) => void;
 }) {
-  const colors = statusColors(status);
+  const colors = statusColors(status as CredentialingStatus);
 
   return (
     <select

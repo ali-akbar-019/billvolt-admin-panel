@@ -1,37 +1,34 @@
+import {
+  Activity,
+  AlertTriangle,
+  ArrowRight,
+  BellRing,
+  Building2,
+  CalendarClock,
+  CheckCircle2,
+  ClipboardCheck,
+  Clock,
+  Sparkles,
+  TrendingUp,
+  UserCheck,
+  UserRound,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Building2,
-  UserRound,
-  UserCheck,
-  BellRing,
-  CalendarClock,
-  AlertTriangle,
-  Clock,
-  ArrowRight,
-  ClipboardCheck,
-  TrendingUp,
-  Sparkles,
-  CheckCircle2,
-  Activity,
-} from 'lucide-react';
 
 import {
   Area,
   AreaChart,
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
+  YAxis
 } from 'recharts';
 
 import { apiClient } from '../api/client';
-import { useAuth } from '../context/AuthContext';
 import { STATUS_LABEL } from '../constants/credentialing';
+import { useAuth } from '../context/AuthContext';
 import type { CredentialingStatus } from '../types';
 
 interface TrendPoint {
