@@ -1,200 +1,390 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShieldCheck, ClipboardCheck, BellRing, Lock, Mail, Eye, EyeOff, Loader2, KeyRound } from 'lucide-react';
+import {
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  Loader2,
+  ArrowRight,
+  ShieldCheck,
+  KeyRound,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-const FEATURES = [
-  { icon: ClipboardCheck, title: 'Credentialing at a glance', text: 'Track payer records and statuses across every practice and provider.' },
-  { icon: BellRing, title: 'Never miss a follow-up', text: 'Overdue and upcoming tasks surface automatically from credentialing dates.' },
-  { icon: ShieldCheck, title: 'Secure by default', text: 'Encrypted sensitive data, role-based access, and a full audit trail.' },
-];
-
 const DEMO_ACCOUNTS = [
-  { label: 'Admin', email: 'admin@billvolt.com', password: 'Admin@12345' },
-  { label: 'Staff', email: 'sarah.mitchell@billvolt.com', password: 'Staff@12345' },
+  {
+    label: 'Admin',
+    email: 'admin@billvolt.com',
+    password: 'Admin@12345',
+  },
+  {
+    label: 'Staff',
+    email: 'sarah.mitchell@billvolt.com',
+    password: 'Staff@12345',
+  },
 ];
 
 export function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const fillDemo = (demoEmail: string, demoPassword: string) => {
+  const fillDemo = (
+    demoEmail: string,
+    demoPassword: string,
+  ) => {
     setEmail(demoEmail);
     setPassword(demoPassword);
     setError(null);
   };
 
-  const handleSubmit = async (e: FormEvent) => {
+  const handleSubmit = async (
+    e: FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
+
+    if (!email.trim() || !password) {
+      setError(
+        'Enter your email address and password to continue.',
+      );
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
     try {
-      await login(email, password);
+      await login(email.trim(), password);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err?.response?.data?.error || 'Something went wrong. Try again.');
+      setError(
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        'Unable to sign in. Please check your credentials and try again.',
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      {/* Brand panel */}
-      <aside className="auth-brand">
-        <div className="auth-brand-inner">
-          <div className="auth-wordmark">
-            <div className="auth-logo">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M13 2 4.5 13h5L10 22l8.5-11h-5L13 2Z" fill="currentColor" />
+    <div className="login-page">
+
+      {/* =====================================================
+          IMAGE SIDE
+          ===================================================== */}
+
+      <section className="login-visual">
+
+        <img
+          className="login-visual-image"
+          src="https://i0.wp.com/cclinic.eu/wp-content/uploads/2018/05/CONCEPT-CLINIC-web-07.jpg?fit=1030%2C687&ssl=1"
+          alt="Modern healthcare workspace"
+        />
+
+        <div className="login-visual-overlay" />
+
+        <div className="login-visual-content">
+
+          <div className="login-visual-brand">
+            <div className="login-brand-mark">
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M13 2 4.5 13h5L10 22l8.5-11h-5L13 2Z"
+                  fill="currentColor"
+                />
               </svg>
             </div>
-            <span className="auth-wordmark-name">billvolt</span>
-          </div>
 
-          <h1 className="auth-brand-title">
-            Run your credentialing office from one place.
-          </h1>
-          <p className="auth-brand-sub">
-            A single admin portal for practices, providers, payer credentialing, follow-ups, and reporting.
-          </p>
-
-          <div className="auth-features">
-            {FEATURES.map(({ icon: Icon, title, text }) => (
-              <div key={title} className="auth-feature">
-                <div className="auth-feature-icon">
-                  <Icon size={18} />
-                </div>
-                <div>
-                  <p className="auth-feature-title">{title}</p>
-                  <p className="auth-feature-text">{text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="auth-brand-footer">
-            <span className="auth-brand-dot" aria-hidden="true" />
-            Secure, encrypted, and fully audited.
-          </div>
-        </div>
-      </aside>
-
-      {/* Sign-in panel */}
-      <main className="auth-form-side">
-        <div className="auth-form-wrap">
-          <div className="auth-mobile-brand">
-            <div className="auth-mobile-logo">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M13 2 4.5 13h5L10 22l8.5-11h-5L13 2Z" fill="currentColor" />
-              </svg>
-            </div>
             <span>billvolt</span>
           </div>
 
-          <div className="surface-card auth-card">
-            <h2 className="auth-card-title">Sign in</h2>
-            <p className="auth-card-sub">Welcome back — access the admin portal.</p>
+          <div className="login-visual-copy">
 
-            <form onSubmit={handleSubmit} className="auth-form" noValidate>
-              <div>
-                <label htmlFor="email" className="auth-label">
-                  Email address
-                </label>
-                <div className="auth-input-wrap">
-                  <Mail size={16} className="auth-input-icon" />
-                  <input
-                    id="email"
-                    className="auth-input"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@billvolt.com"
-                  />
-                </div>
+            <div className="login-eyebrow">
+              CREDENTIALING & OPERATIONS
+            </div>
+
+            <h1>
+              Everything your team needs,
+              <br />
+              in one workspace.
+            </h1>
+
+            <p>
+              Manage practices, providers, credentialing,
+              follow-ups and reporting without jumping
+              between systems.
+            </p>
+
+          </div>
+
+          <div className="login-visual-footer">
+            <span className="login-status-dot" />
+
+            Built for healthcare operations
+          </div>
+
+        </div>
+      </section>
+
+      {/* =====================================================
+          FORM SIDE
+          ===================================================== */}
+
+      <main className="login-form-side">
+
+        <div className="login-form-wrap">
+
+          {/* Mobile logo */}
+
+          <div className="login-mobile-brand">
+            <div className="login-brand-mark">
+              <svg
+                width="19"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <path
+                  d="M13 2 4.5 13h5L10 22l8.5-11h-5L13 2Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+
+            <span>billvolt</span>
+          </div>
+
+          {/* Form */}
+
+          <div className="login-form-header">
+
+            <div className="login-form-kicker">
+              ADMIN PORTAL
+            </div>
+
+            <h2>Welcome back</h2>
+
+            <p>
+              Sign in to access your BillVolt workspace.
+            </p>
+
+          </div>
+
+          <form
+            className="login-form"
+            onSubmit={handleSubmit}
+            noValidate
+          >
+
+            {/* Email */}
+
+            <div className="login-field">
+
+              <label htmlFor="login-email">
+                Email address
+              </label>
+
+              <div className="login-input-wrap">
+
+                <Mail
+                  size={17}
+                  strokeWidth={1.8}
+                  className="login-input-icon"
+                />
+
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  autoComplete="username"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  placeholder="you@company.com"
+                  disabled={isSubmitting}
+                  required
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+
+                    if (error) {
+                      setError(null);
+                    }
+                  }}
+                />
+
               </div>
+            </div>
 
-              <div>
-                <label htmlFor="password" className="auth-label">
+            {/* Password */}
+
+            <div className="login-field">
+
+              <div className="login-label-row">
+
+                <label htmlFor="login-password">
                   Password
                 </label>
-                <div className="auth-input-wrap">
-                  <Lock size={16} className="auth-input-icon" />
-                  <input
-                    id="password"
-                    className="auth-input"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="current-password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
+
+              </div>
+
+              <div className="login-input-wrap">
+
+                <Lock
+                  size={17}
+                  strokeWidth={1.8}
+                  className="login-input-icon"
+                />
+
+                <input
+                  id="login-password"
+                  type={
+                    showPassword
+                      ? 'text'
+                      : 'password'
+                  }
+                  value={password}
+                  autoComplete="current-password"
+                  placeholder="Enter your password"
+                  disabled={isSubmitting}
+                  required
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+
+                    if (error) {
+                      setError(null);
+                    }
+                  }}
+                />
+
+                <button
+                  type="button"
+                  className="login-password-toggle"
+                  onClick={() =>
+                    setShowPassword((value) => !value)
+                  }
+                  disabled={isSubmitting}
+                  aria-label={
+                    showPassword
+                      ? 'Hide password'
+                      : 'Show password'
+                  }
+                >
+                  {showPassword ? (
+                    <EyeOff size={17} />
+                  ) : (
+                    <Eye size={17} />
+                  )}
+                </button>
+
+              </div>
+            </div>
+
+            {/* Error */}
+
+            {error && (
+              <div className="login-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            {/* Submit */}
+
+            <button
+              type="submit"
+              className="login-submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2
+                    size={17}
+                    className="login-spinner"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    className="auth-password-toggle"
-                  >
-                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                </div>
-              </div>
 
-              {error && (
-                <div role="alert" className="auth-error">
-                  {error}
-                </div>
+                  Signing in…
+                </>
+              ) : (
+                <>
+                  Sign in
+
+                  <ArrowRight size={17} />
+                </>
               )}
+            </button>
 
-              <div className="auth-demo">
-                <p className="auth-demo-label">
-                  <KeyRound size={12} />
-                  Demo access — tap to fill
-                </p>
-                {DEMO_ACCOUNTS.map((account) => (
-                  <div key={account.email} className="auth-demo-row">
-                    <div className="auth-demo-creds">
-                      <span className="auth-demo-tag">{account.label}</span>
-                      <span className="auth-demo-email">{account.email}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="auth-demo-fill"
-                      onClick={() => fillDemo(account.email, account.password)}
-                    >
-                      Use
-                    </button>
-                  </div>
-                ))}
-              </div>
+          </form>
 
-              <button type="submit" disabled={isSubmitting} className="auth-submit">
-                {isSubmitting ? (
-                  <>
-                    <Loader2 size={16} className="auth-spin" /> Signing in…
-                  </>
-                ) : (
-                  'Sign in'
-                )}
-              </button>
-            </form>
+          {/* Security */}
 
-            <p className="auth-helper">
-              Having trouble? Ask an administrator to reset your access.
-            </p>
+          <div className="login-security">
+
+            <ShieldCheck size={15} />
+
+            <span>
+              Secure administrator access
+            </span>
+
           </div>
+
+          {/* Demo access — deliberately secondary */}
+
+          <details className="login-demo">
+
+            <summary>
+              <KeyRound size={14} />
+
+              <span>Demo access</span>
+            </summary>
+
+            <div className="login-demo-content">
+
+              {DEMO_ACCOUNTS.map((account) => (
+                <button
+                  key={account.email}
+                  type="button"
+                  onClick={() =>
+                    fillDemo(
+                      account.email,
+                      account.password,
+                    )
+                  }
+                >
+                  <span>
+                    <strong>{account.label}</strong>
+
+                    {account.email}
+                  </span>
+
+                  <ArrowRight size={14} />
+                </button>
+              ))}
+
+            </div>
+
+          </details>
+
+          <p className="login-help">
+            Having trouble signing in? Contact your
+            BillVolt administrator.
+          </p>
+
         </div>
+
       </main>
+
     </div>
   );
 }

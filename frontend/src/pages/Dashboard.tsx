@@ -12,7 +12,10 @@ import {
   ClipboardCheck,
   TrendingUp,
   Sparkles,
+  CheckCircle2,
+  Activity,
 } from 'lucide-react';
+
 import {
   Area,
   AreaChart,
@@ -20,12 +23,12 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
+
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { STATUS_LABEL } from '../constants/credentialing';
@@ -44,11 +47,22 @@ interface Summary {
   activePractices: number;
   approvedThisMonth: number;
   pendingCredentialing: number;
-  providers: { total: number; active: number };
-  followUps: { overdue: number; dueToday: number; upcoming: number; completed: number };
+  providers: {
+    total: number;
+    active: number;
+  };
+  followUps: {
+    overdue: number;
+    dueToday: number;
+    upcoming: number;
+    completed: number;
+  };
   credentialingByStatus: Partial<Record<CredentialingStatus, number>>;
   trendByMonth: TrendPoint[];
-  topPayers: { payerName: string; count: number }[];
+  topPayers: {
+    payerName: string;
+    count: number;
+  }[];
 }
 
 const STATUS_ORDER: CredentialingStatus[] = [
@@ -61,22 +75,22 @@ const STATUS_ORDER: CredentialingStatus[] = [
 ];
 
 const STATUS_HEX: Record<CredentialingStatus, string> = {
-  not_started: '#7B8296',
+  not_started: '#8B93A7',
   in_progress: '#D97706',
-  submitted: '#7C5CFC',
-  approved: '#1D9E75',
-  denied: '#E24B4A',
-  expired: '#92621B',
+  submitted: '#7357E8',
+  approved: '#159570',
+  denied: '#D94A4A',
+  expired: '#9A6A25',
 };
 
 const CHART_ACCENT = '#2954E0';
-const CHART_APPROVED = '#1D9E75';
-const CHART_SUBMITTED = '#7C5CFC';
-const CHART_GRID = 'rgba(11, 14, 26, 0.08)';
+const CHART_APPROVED = '#159570';
+const CHART_GRID = 'rgba(11, 14, 26, 0.07)';
 const CHART_TICK = '#7B8296';
 
 export function Dashboard() {
   const { user } = useAuth();
+
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState(false);
 
@@ -95,66 +109,23 @@ export function Dashboard() {
   });
 
   if (summary === null) {
-    return (
-      <div>
-        <Skeleton title />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 20 }}>
-          {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} />)}
-        </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-          <Skeleton block />
-          <Skeleton block />
-        </div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
-  const statCards = [
-    {
-      label: 'Active practices',
-      value: summary.activePractices,
-      icon: Building2,
-      tint: 'var(--accent-tint)',
-      color: 'var(--accent)',
-      to: '/practices',
-    },
-    {
-      label: 'Providers',
-      value: summary.providers.total,
-      sub: `${summary.providers.active} active`,
-      icon: UserRound,
-      tint: 'var(--status-submitted-tint)',
-      color: 'var(--status-submitted)',
-      to: '/providers',
-    },
-    {
-      label: 'Approved this month',
-      value: summary.approvedThisMonth,
-      icon: UserCheck,
-      tint: 'var(--status-approved-tint)',
-      color: 'var(--status-approved)',
-      to: '/credentialing',
-    },
-    {
-      label: 'Pending credentialing',
-      value: summary.pendingCredentialing,
-      icon: ClipboardCheck,
-      tint: 'var(--status-in-progress-tint)',
-      color: 'var(--status-in-progress)',
-      to: '/credentialing',
-    },
-    {
-      label: 'Open follow-ups',
-      value: summary.followUps.dueToday + summary.followUps.overdue + summary.followUps.upcoming,
-      icon: BellRing,
-      tint: 'var(--status-denied-tint)',
-      color: 'var(--status-denied)',
-      to: '/follow-ups',
-    },
-  ];
+  const openFollowUps =
+    summary.followUps.overdue +
+    summary.followUps.dueToday +
+    summary.followUps.upcoming;
 
-  const statusEntries = STATUS_ORDER.filter((s) => (summary.credentialingByStatus[s] ?? 0) > 0)
-    .map((s) => [s, summary.credentialingByStatus![s] as number] as [CredentialingStatus, number]);
+  const statusEntries = STATUS_ORDER
+    .filter((status) => (summary.credentialingByStatus[status] ?? 0) > 0)
+    .map(
+      (status) =>
+        [
+          status,
+          summary.credentialingByStatus[status] as number,
+        ] as [CredentialingStatus, number]
+    );
 
   const statusData = statusEntries.map(([status, count]) => ({
     label: STATUS_LABEL[status],
@@ -162,208 +133,559 @@ export function Dashboard() {
     color: STATUS_HEX[status],
   }));
 
-  const payerData = summary.topPayers.map((p) => ({ payerName: p.payerName, count: p.count }));
+  const payerData = summary.topPayers.slice(0, 5);
 
   const followUpBuckets = [
-    { key: 'overdue', label: 'Overdue', icon: AlertTriangle, tint: 'var(--status-denied)', count: summary.followUps.overdue },
-    { key: 'dueToday', label: 'Due today', icon: CalendarClock, tint: 'var(--status-in-progress)', count: summary.followUps.dueToday },
-    { key: 'upcoming', label: 'Upcoming', icon: Clock, tint: 'var(--accent)', count: summary.followUps.upcoming },
+    {
+      key: 'overdue',
+      label: 'Overdue',
+      description: 'Requires immediate attention',
+      icon: AlertTriangle,
+      color: 'var(--status-denied)',
+      count: summary.followUps.overdue,
+    },
+    {
+      key: 'dueToday',
+      label: 'Due today',
+      description: 'Needs attention today',
+      icon: CalendarClock,
+      color: 'var(--status-in-progress)',
+      count: summary.followUps.dueToday,
+    },
+    {
+      key: 'upcoming',
+      label: 'Upcoming',
+      description: 'Scheduled follow-ups',
+      icon: Clock,
+      color: 'var(--accent)',
+      count: summary.followUps.upcoming,
+    },
   ];
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 6 }}>
+    <div className="dashboard-page">
+      {/* Header */}
+
+      <header className="dashboard-header">
         <div>
-          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: 0 }}>
-            Welcome back, {user?.name?.split(' ')[0] ?? 'there'}
+          <p className="dashboard-eyebrow">
+            {today}
+          </p>
+
+          <h1 className="dashboard-title">
+            Welcome back, {user?.name?.split(' ')[0] ?? 'there'}.
           </h1>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-            {today} · Here's what's happening across your practices.
+
+          <p className="dashboard-subtitle">
+            Here's what's happening across your credentialing operation.
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          <QuickLink to="/reports" icon={TrendingUp}>View reports</QuickLink>
-          <QuickLink to="/ai-assistant" icon={Sparkles}>Ask the AI assistant</QuickLink>
-        </div>
-      </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, margin: '26px 0 20px' }}>
-        {statCards.map(({ label, value, sub, icon: Icon, tint, color, to }) => (
-          <Link key={label} to={to} className="surface-card surface-card--hoverable" style={{ padding: '22px', display: 'block', textDecoration: 'none', color: 'inherit' }}>
-            <div
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: 11,
-                background: tint,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 16,
-              }}
-            >
-              <Icon size={20} color={color} />
-            </div>
-            <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: '0 0 6px', fontWeight: 500 }}>
-              {label}
-            </p>
-            <p className="tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 32, fontWeight: 600, margin: 0 }}>
-              {error ? '—' : value ?? '—'}
-            </p>
-            {sub && <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', margin: '4px 0 0' }}>{sub}</p>}
+        <div className="dashboard-actions">
+          <Link to="/reports" className="dashboard-action">
+            <TrendingUp size={16} />
+            Reports
           </Link>
-        ))}
-      </div>
+
+          <Link to="/ai-assistant" className="dashboard-action dashboard-action-primary">
+            <Sparkles size={16} />
+            Ask AI
+          </Link>
+        </div>
+      </header>
+
+      {/* Main statistics */}
+
+      <section className="dashboard-stat-grid">
+        <StatCard
+          label="Active practices"
+          value={summary.activePractices}
+          icon={Building2}
+          color="#2954E0"
+          to="/practices"
+        />
+
+        <StatCard
+          label="Providers"
+          value={summary.providers.total}
+          secondary={`${summary.providers.active} active`}
+          icon={UserRound}
+          color="#7357E8"
+          to="/providers"
+        />
+
+        <StatCard
+          label="Approved this month"
+          value={summary.approvedThisMonth}
+          icon={UserCheck}
+          color="#159570"
+          to="/credentialing"
+        />
+
+        <StatCard
+          label="Pending credentialing"
+          value={summary.pendingCredentialing}
+          icon={ClipboardCheck}
+          color="#D97706"
+          to="/credentialing"
+        />
+
+        <StatCard
+          label="Open follow-ups"
+          value={openFollowUps}
+          secondary={
+            summary.followUps.overdue > 0
+              ? `${summary.followUps.overdue} overdue`
+              : 'Nothing overdue'
+          }
+          icon={BellRing}
+          color={
+            summary.followUps.overdue > 0
+              ? '#D94A4A'
+              : '#2954E0'
+          }
+          to="/follow-ups"
+          emphasis={summary.followUps.overdue > 0}
+        />
+      </section>
 
       {error ? (
-        <div className="surface-card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-          <BellRing size={30} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
-          <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 6px' }}>Could not load dashboard data</p>
-          <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: 0 }}>
-            Check that the backend is running, then{' '}
-            <a href="/dashboard" style={{ color: 'var(--accent)' }}>refresh</a>.
-          </p>
+        <div className="dashboard-error">
+          <BellRing size={28} />
+
+          <div>
+            <strong>Unable to load dashboard data</strong>
+            <p>
+              Check that the backend is running, then{' '}
+              <a href="/dashboard">refresh the page</a>.
+            </p>
+          </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 }}>
-          {/* Credentialing pipeline */}
-          <div className="surface-card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 18px' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Credentialing pipeline</p>
-              <Link to="/credentialing" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
-                Open grid <ArrowRight size={14} />
-              </Link>
-            </div>
-            {statusData.length === 0 ? (
-              <EmptyNote text="Add a payer record to start the pipeline." />
-            ) : (
-              <div style={{ height: Math.max(170, statusData.length * 42) }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={statusData} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-                    <XAxis type="number" allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} />
-                    <YAxis type="category" dataKey="label" width={96} axisLine={false} tickLine={false} tick={{ fontSize: 12.5, fill: CHART_TICK }} />
-                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(11, 14, 26, 0.04)' }} />
-                    <Bar dataKey="count" name="Records" radius={[0, 5, 5, 0]} barSize={16}>
-                      {statusData.map((entry) => <Cell key={entry.label} fill={entry.color} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+        <>
+          {/* Main analytics */}
 
-          {/* 6-month activity trend */}
-          <div className="surface-card" style={{ padding: 24 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 18px' }}>
-              Credentialing activity
-            </p>
-            {summary.trendByMonth.every((t) => t.created === 0 && t.approved === 0) ? (
-              <EmptyNote text="No activity recorded in the last 6 months yet." />
-            ) : (
-              <div style={{ height: 240 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={summary.trendByMonth} margin={{ top: 6, right: 8, bottom: 0, left: -8 }}>
-                    <defs>
-                      <linearGradient id="trendCreated" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={CHART_ACCENT} stopOpacity={0.22} />
-                        <stop offset="100%" stopColor={CHART_ACCENT} stopOpacity={0.02} />
-                      </linearGradient>
-                      <linearGradient id="trendApproved" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={CHART_APPROVED} stopOpacity={0.22} />
-                        <stop offset="100%" stopColor={CHART_APPROVED} stopOpacity={0.02} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} />
-                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} width={34} />
-                    <Tooltip content={<ChartTooltip />} />
-                    <Legend wrapperStyle={{ fontSize: 12.5 }} iconType="square" iconSize={9} />
-                    <Area type="monotone" dataKey="created" name="Created" stroke={CHART_ACCENT} strokeWidth={2.5} fill="url(#trendCreated)" dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                    <Area type="monotone" dataKey="approved" name="Approved" stroke={CHART_APPROVED} strokeWidth={2.5} fill="url(#trendApproved)" dot={{ r: 3, strokeWidth: 0 }} activeDot={{ r: 5 }} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+          <section className="dashboard-main-grid">
+            {/* Activity */}
 
-          {/* Top payers */}
-          <div className="surface-card" style={{ padding: 24 }}>
-            <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 18px' }}>Top payers by volume</p>
-            {payerData.length === 0 ? (
-              <EmptyNote text="No payer records yet." />
-            ) : (
-              <div style={{ height: 210 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={payerData} margin={{ top: 6, right: 8, bottom: 0, left: -14 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={CHART_GRID} vertical={false} />
-                    <XAxis
-                      dataKey="payerName"
-                      axisLine={false}
-                      tickLine={false}
-                      interval={0}
-                      tick={{ fontSize: 11, fill: CHART_TICK }}
-                      tickFormatter={(v: string) => (v.length > 12 ? `${v.slice(0, 11)}…` : v)}
-                    />
-                    <YAxis allowDecimals={false} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: CHART_TICK }} width={32} />
-                    <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(11, 14, 26, 0.04)' }} />
-                    <Bar dataKey="count" name="Records" fill={CHART_SUBMITTED} radius={[5, 5, 0, 0]} barSize={26} maxBarSize={34} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+            <div className="dashboard-panel dashboard-panel-large">
+              <PanelHeader
+                title="Credentialing activity"
+                description="Records created and approved over the last six months."
+                icon={<Activity size={17} />}
+              />
 
-          {/* Follow-up buckets */}
-          <div className="surface-card" style={{ padding: 24 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 18px' }}>
-              <p style={{ fontSize: 15, fontWeight: 600, margin: 0 }}>Follow-up queue</p>
-              <Link to="/follow-ups" style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>
-                Open queue <ArrowRight size={14} />
-              </Link>
+              {summary.trendByMonth.every(
+                (item) =>
+                  item.created === 0 &&
+                  item.approved === 0
+              ) ? (
+                <EmptyNote text="No activity recorded in the last six months yet." />
+              ) : (
+                <div className="activity-chart">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={summary.trendByMonth}
+                      margin={{
+                        top: 10,
+                        right: 10,
+                        left: -20,
+                        bottom: 0,
+                      }}
+                    >
+                      <defs>
+                        <linearGradient
+                          id="dashboardCreated"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor={CHART_ACCENT}
+                            stopOpacity={0.18}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor={CHART_ACCENT}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+
+                        <linearGradient
+                          id="dashboardApproved"
+                          x1="0"
+                          y1="0"
+                          x2="0"
+                          y2="1"
+                        >
+                          <stop
+                            offset="0%"
+                            stopColor={CHART_APPROVED}
+                            stopOpacity={0.18}
+                          />
+                          <stop
+                            offset="100%"
+                            stopColor={CHART_APPROVED}
+                            stopOpacity={0}
+                          />
+                        </linearGradient>
+                      </defs>
+
+                      <CartesianGrid
+                        strokeDasharray="4 5"
+                        stroke={CHART_GRID}
+                        vertical={false}
+                      />
+
+                      <XAxis
+                        dataKey="month"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 12,
+                          fill: CHART_TICK,
+                        }}
+                      />
+
+                      <YAxis
+                        allowDecimals={false}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{
+                          fontSize: 12,
+                          fill: CHART_TICK,
+                        }}
+                        width={38}
+                      />
+
+                      <Tooltip content={<ChartTooltip />} />
+
+                      <Area
+                        type="monotone"
+                        dataKey="created"
+                        name="Created"
+                        stroke={CHART_ACCENT}
+                        strokeWidth={2.5}
+                        fill="url(#dashboardCreated)"
+                        dot={{
+                          r: 3,
+                          strokeWidth: 2,
+                          fill: '#fff',
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
+
+                      <Area
+                        type="monotone"
+                        dataKey="approved"
+                        name="Approved"
+                        stroke={CHART_APPROVED}
+                        strokeWidth={2.5}
+                        fill="url(#dashboardApproved)"
+                        dot={{
+                          r: 3,
+                          strokeWidth: 2,
+                          fill: '#fff',
+                        }}
+                        activeDot={{ r: 5 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {followUpBuckets.map(({ key, label, icon: Icon, tint, count }) => (
-                <Link
-                  key={key}
-                  to="/follow-ups"
-                  className="surface-card surface-card--hoverable"
-                  style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', textDecoration: 'none', color: 'inherit', boxShadow: 'none' }}
-                >
-                  <div style={{ width: 40, height: 40, borderRadius: 10, background: count > 0 ? `${tint}18` : 'var(--bg-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Icon size={18} color={count > 0 ? tint : 'var(--text-muted)'} />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <p style={{ fontSize: 14.5, fontWeight: 600, margin: 0 }}>{label}</p>
-                    <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                      {count === 0 ? 'All clear' : `${count} pending follow-up${count === 1 ? '' : 's'} need attention`}
-                    </p>
-                  </div>
-                  <span className="tabular-nums" style={{ fontSize: 22, fontWeight: 700, color: count > 0 ? tint : 'var(--text-muted)' }}>
-                    {count}
-                  </span>
-                </Link>
-              ))}
+
+            {/* Pipeline */}
+
+            <div className="dashboard-panel">
+              <PanelHeader
+                title="Credentialing pipeline"
+                description="Current status across payer records."
+                action={
+                  <Link to="/credentialing" className="panel-link">
+                    View all
+                    <ArrowRight size={14} />
+                  </Link>
+                }
+              />
+
+              {statusData.length === 0 ? (
+                <EmptyNote text="Add a payer record to start the pipeline." />
+              ) : (
+                <div className="pipeline-list">
+                  {statusData.map((item) => {
+                    const total = statusData.reduce(
+                      (sum, current) => sum + current.count,
+                      0
+                    );
+
+                    const percentage =
+                      total > 0
+                        ? Math.round((item.count / total) * 100)
+                        : 0;
+
+                    return (
+                      <div
+                        key={item.label}
+                        className="pipeline-item"
+                      >
+                        <div className="pipeline-top">
+                          <div className="pipeline-name">
+                            <span
+                              className="pipeline-dot"
+                              style={{
+                                background: item.color,
+                              }}
+                            />
+
+                            {item.label}
+                          </div>
+
+                          <strong>{item.count}</strong>
+                        </div>
+
+                        <div className="pipeline-track">
+                          <div
+                            className="pipeline-fill"
+                            style={{
+                              width: `${percentage}%`,
+                              background: item.color,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          </div>
-        </div>
+          </section>
+
+          {/* Lower section */}
+
+          <section className="dashboard-bottom-grid">
+            {/* Top payers */}
+
+            <div className="dashboard-panel">
+              <PanelHeader
+                title="Top payers"
+                description="Highest volume of credentialing records."
+                action={
+                  <Link to="/credentialing" className="panel-link">
+                    Credentialing
+                    <ArrowRight size={14} />
+                  </Link>
+                }
+              />
+
+              {payerData.length === 0 ? (
+                <EmptyNote text="No payer records yet." />
+              ) : (
+                <div className="payer-list">
+                  {payerData.map((payer, index) => {
+                    const maxCount = payerData[0]?.count || 1;
+                    const percentage =
+                      (payer.count / maxCount) * 100;
+
+                    return (
+                      <div
+                        key={payer.payerName}
+                        className="payer-row"
+                      >
+                        <div className="payer-rank">
+                          {String(index + 1).padStart(2, '0')}
+                        </div>
+
+                        <div className="payer-main">
+                          <div className="payer-heading">
+                            <span className="payer-name">
+                              {payer.payerName}
+                            </span>
+
+                            <strong className="payer-count">
+                              {payer.count}
+                            </strong>
+                          </div>
+
+                          <div className="payer-track">
+                            <div
+                              className="payer-progress"
+                              style={{
+                                width: `${percentage}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Follow ups */}
+
+            <div className="dashboard-panel">
+              <PanelHeader
+                title="Follow-up queue"
+                description="Tasks that need attention."
+                action={
+                  <Link to="/follow-ups" className="panel-link">
+                    Open queue
+                    <ArrowRight size={14} />
+                  </Link>
+                }
+              />
+
+              <div className="followup-list">
+                {followUpBuckets.map(
+                  ({
+                    key,
+                    label,
+                    description,
+                    icon: Icon,
+                    color,
+                    count,
+                  }) => (
+                    <Link
+                      key={key}
+                      to="/follow-ups"
+                      className="followup-row"
+                    >
+                      <div
+                        className="followup-icon"
+                        style={{
+                          color,
+                          background: `${color}12`,
+                        }}
+                      >
+                        <Icon size={18} />
+                      </div>
+
+                      <div className="followup-content">
+                        <strong>{label}</strong>
+
+                        <span>
+                          {count === 0
+                            ? 'All clear'
+                            : description}
+                        </span>
+                      </div>
+
+                      <span
+                        className="followup-count"
+                        style={{
+                          color:
+                            count > 0
+                              ? color
+                              : 'var(--text-muted)',
+                        }}
+                      >
+                        {count}
+                      </span>
+                    </Link>
+                  )
+                )}
+              </div>
+
+              <div className="completed-row">
+                <CheckCircle2 size={16} />
+
+                <span>
+                  {summary.followUps.completed} follow-ups
+                  completed
+                </span>
+              </div>
+            </div>
+          </section>
+        </>
       )}
     </div>
   );
 }
 
-function QuickLink({ to, icon: Icon, children }: { to: string; icon: typeof ArrowRight; children: React.ReactNode }) {
+/* -------------------------------------------------------------------------- */
+/* Components                                                                 */
+/* -------------------------------------------------------------------------- */
+
+function StatCard({
+  label,
+  value,
+  secondary,
+  icon: Icon,
+  color,
+  to,
+  emphasis,
+}: {
+  label: string;
+  value: number;
+  secondary?: string;
+  icon: typeof Building2;
+  color: string;
+  to: string;
+  emphasis?: boolean;
+}) {
   return (
     <Link
       to={to}
-      style={{
-        display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 14px',
-        borderRadius: 'var(--radius)', border: '1px solid var(--border-strong)',
-        background: 'var(--bg-surface)', color: 'var(--text-secondary)',
-        fontSize: 13.5, fontWeight: 600, textDecoration: 'none',
-      }}
+      className={`dashboard-stat ${emphasis ? 'dashboard-stat-alert' : ''}`}
     >
-      <Icon size={15} /> {children}
+      <div className="stat-icon" style={{ color, background: `${color}12` }}>
+        <Icon size={19} />
+      </div>
+
+      <div className="stat-content">
+        <span className="stat-label">{label}</span>
+
+        <strong className="stat-value tabular-nums">
+          {value}
+        </strong>
+
+        {secondary && (
+          <span className="stat-secondary">
+            {secondary}
+          </span>
+        )}
+      </div>
+
+      <ArrowRight className="stat-arrow" size={17} />
     </Link>
+  );
+}
+
+function PanelHeader({
+  title,
+  description,
+  icon,
+  action,
+}: {
+  title: string;
+  description?: string;
+  icon?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="panel-header">
+      <div className="panel-title-wrap">
+        {icon && (
+          <div className="panel-title-icon">
+            {icon}
+          </div>
+        )}
+
+        <div>
+          <h2>{title}</h2>
+
+          {description && (
+            <p>{description}</p>
+          )}
+        </div>
+      </div>
+
+      {action}
+    </div>
   );
 }
 
@@ -375,26 +697,39 @@ interface TooltipEntry {
   fill?: string;
 }
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: TooltipEntry[]; label?: string }) {
-  if (!active || !payload?.length) return null;
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: TooltipEntry[];
+  label?: string;
+}) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
   return (
-    <div
-      style={{
-        background: '#fff',
-        border: '1px solid var(--border)',
-        borderRadius: 10,
-        boxShadow: 'var(--shadow-card)',
-        padding: '10px 14px',
-        fontSize: 13,
-        minWidth: 120,
-      }}
-    >
-      <p style={{ fontWeight: 600, margin: '0 0 6px' }}>{label}</p>
+    <div className="dashboard-tooltip">
+      <strong>{label}</strong>
+
       {payload.map((entry) => (
-        <p key={entry.name} style={{ margin: '2px 0', color: 'var(--text-secondary)' }}>
-          <span style={{ display: 'inline-block', width: 9, height: 9, borderRadius: 3, background: entry.color || entry.stroke || entry.fill, marginRight: 7 }} />
-          {entry.name}: <strong className="tabular-nums" style={{ color: 'var(--text-primary)' }}>{entry.value}</strong>
-        </p>
+        <div key={entry.name}>
+          <span
+            className="tooltip-dot"
+            style={{
+              background:
+                entry.color ||
+                entry.stroke ||
+                entry.fill,
+            }}
+          />
+
+          <span>{entry.name}</span>
+
+          <b>{entry.value}</b>
+        </div>
       ))}
     </div>
   );
@@ -402,26 +737,34 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 function EmptyNote({ text }: { text: string }) {
   return (
-    <div style={{ padding: '28px 16px', textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>
+    <div className="dashboard-empty">
       {text}
     </div>
   );
 }
 
-function Skeleton({ block, title }: { block?: boolean; title?: boolean }) {
+function DashboardSkeleton() {
   return (
-    <div
-      className="surface-card"
-      style={{
-        padding: block ? 40 : 22,
-        height: block ? 260 : undefined,
-        background: 'var(--bg-surface-2)',
-        animation: 'pulse 1.4s ease-in-out infinite',
-      }}
-    >
-      {title && (
-        <div style={{ width: '45%', height: 18, borderRadius: 4, background: 'var(--border)' }} />
-      )}
+    <div className="dashboard-page dashboard-loading">
+      <div className="skeleton-header">
+        <div className="skeleton-line skeleton-small" />
+        <div className="skeleton-line skeleton-title" />
+        <div className="skeleton-line skeleton-description" />
+      </div>
+
+      <div className="dashboard-stat-grid">
+        {Array.from({ length: 5 }).map((_, index) => (
+          <div
+            key={index}
+            className="dashboard-stat skeleton-card"
+          />
+        ))}
+      </div>
+
+      <div className="dashboard-main-grid">
+        <div className="dashboard-panel skeleton-card large" />
+        <div className="dashboard-panel skeleton-card" />
+      </div>
     </div>
   );
 }
