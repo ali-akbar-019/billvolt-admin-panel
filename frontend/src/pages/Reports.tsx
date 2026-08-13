@@ -1,41 +1,70 @@
 import { useEffect, useState } from 'react';
-import { BarChart3, Download } from 'lucide-react';
+import {
+  BarChart3,
+  Download,
+  Building2,
+  UsersRound,
+  ClipboardCheck,
+  TrendingUp,
+} from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { STATUS_LABEL, statusColors } from '../constants/credentialing';
 import type { CredentialingStatus } from '../types';
 
 interface Summary {
-  practices: { total: number; active: number };
-  providers: { total: number; active: number };
+  practices: {
+    total: number;
+    active: number;
+  };
+  providers: {
+    total: number;
+    active: number;
+  };
   credentialingByStatus: Partial<Record<CredentialingStatus, number>>;
-  topPayers: { payerName: string; count: number }[];
+  topPayers: {
+    payerName: string;
+    count: number;
+  }[];
 }
 
 export function Reports() {
   const { showToast } = useToast();
+
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
+    setIsLoading(true);
+
     apiClient
       .get('/reports/summary')
       .then((res) => setSummary(res.data))
-      .catch(() => showToast('Could not load reports', 'error'));
+      .catch(() => showToast('Could not load reports', 'error'))
+      .finally(() => setIsLoading(false));
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const exportCsv = async () => {
     setIsExporting(true);
+
     try {
-      const res = await apiClient.get('/reports/export', { responseType: 'blob' });
+      const res = await apiClient.get('/reports/export', {
+        responseType: 'blob',
+      });
+
       const url = window.URL.createObjectURL(new Blob([res.data]));
+
       const a = document.createElement('a');
       a.href = url;
       a.download = `reports-${new Date().toISOString().slice(0, 10)}.csv`;
+
       document.body.appendChild(a);
       a.click();
       a.remove();
+
       window.URL.revokeObjectURL(url);
     } catch {
       showToast('Could not export reports', 'error');
@@ -44,103 +73,332 @@ export function Reports() {
     }
   };
 
-  if (!summary) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>Loading reports…</div>;
+  if (isLoading) {
+    return <ReportsSkeleton />;
   }
 
-  const statusEntries = Object.entries(summary.credentialingByStatus) as [CredentialingStatus, number][];
-  const maxStatusCount = Math.max(1, ...statusEntries.map(([, count]) => count));
-  const maxPayerCount = Math.max(1, ...summary.topPayers.map((p) => p.count));
+  if (!summary) {
+    return (
+      <div className="reports-error">
+        <div className="reports-error-icon">
+          <BarChart3 size={22} />
+        </div>
+
+        <h3>Could not load reports</h3>
+
+        <p>
+          Something went wrong while loading your reporting data.
+        </p>
+      </div>
+    );
+  }
+
+  const statusEntries = Object.entries(
+    summary.credentialingByStatus
+  ) as [CredentialingStatus, number][];
+
+  const totalPayerRecords = statusEntries.reduce(
+    (sum, [, count]) => sum + count,
+    0
+  );
+
+  const maxStatusCount = Math.max(
+    1,
+    ...statusEntries.map(([, count]) => count)
+  );
+
+  const maxPayerCount = Math.max(
+    1,
+    ...summary.topPayers.map((payer) => payer.count)
+  );
+
+  const providerActivePercentage =
+    summary.providers.total > 0
+      ? Math.round(
+        (summary.providers.active / summary.providers.total) * 100
+      )
+      : 0;
+
+  const practiceActivePercentage =
+    summary.practices.total > 0
+      ? Math.round(
+        (summary.practices.active / summary.practices.total) * 100
+      )
+      : 0;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
+    <div className="reports-page">
+      {/* Header */}
+      <div className="reports-header">
         <div>
-          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Reports</h1>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
-            A snapshot of practices, providers, and credentialing status.
+          <div className="reports-title-row">
+            <h1>Reports</h1>
+            <span className="reports-title-icon">
+              <BarChart3 size={18} />
+            </span>
+          </div>
+
+          <p>
+            A snapshot of practices, providers, and credentialing
+            performance.
           </p>
         </div>
+
         <button
           onClick={exportCsv}
           disabled={isExporting}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
-            border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5,
-            fontWeight: 600, cursor: isExporting ? 'not-allowed' : 'pointer', opacity: isExporting ? 0.6 : 1,
-          }}
+          className="reports-export-button"
         >
-          <Download size={15} /> {isExporting ? 'Exporting…' : 'Export CSV'}
+          <Download size={16} />
+          {isExporting ? 'Exporting…' : 'Export CSV'}
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <SummaryCard label="Practices" value={summary.practices.total} sub={`${summary.practices.active} active`} />
-        <SummaryCard label="Providers" value={summary.providers.total} sub={`${summary.providers.active} active`} />
-        <SummaryCard label="Payer records" value={statusEntries.reduce((sum, [, c]) => sum + c, 0)} sub="across all statuses" />
+      {/* Overview */}
+      <div className="reports-overview">
+        <SummaryCard
+          label="Practices"
+          value={summary.practices.total}
+          sub={`${summary.practices.active} active`}
+          percentage={practiceActivePercentage}
+          icon={Building2}
+        />
+
+        <SummaryCard
+          label="Providers"
+          value={summary.providers.total}
+          sub={`${summary.providers.active} active`}
+          percentage={providerActivePercentage}
+          icon={UsersRound}
+        />
+
+        <SummaryCard
+          label="Payer records"
+          value={totalPayerRecords}
+          sub="Across all statuses"
+          icon={ClipboardCheck}
+        />
+
+        <SummaryCard
+          label="Credentialing activity"
+          value={summary.topPayers.length}
+          sub="Active payer relationships"
+          icon={TrendingUp}
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
-        <div className="surface-card" style={{ padding: 24 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 18px' }}>Credentialing by status</p>
+      {/* Main Reports */}
+      <div className="reports-grid">
+        {/* Credentialing Status */}
+        <section className="reports-card">
+          <div className="reports-card-header">
+            <div>
+              <h2>Credentialing by status</h2>
+              <p>Current distribution across all payer records.</p>
+            </div>
+
+            <div className="reports-card-icon">
+              <ClipboardCheck size={17} />
+            </div>
+          </div>
+
           {statusEntries.length === 0 ? (
-            <EmptyNote />
+            <EmptyReportState />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {statusEntries.map(([status, count]) => (
-                <div key={status}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{STATUS_LABEL[status]}</span>
-                    <span className="tabular-nums" style={{ fontWeight: 600 }}>{count}</span>
+            <div className="reports-bars">
+              {statusEntries.map(([status, count]) => {
+                const colors = statusColors(status);
+
+                return (
+                  <div key={status} className="report-bar-row">
+                    <div className="report-bar-meta">
+                      <div className="report-bar-label">
+                        <span
+                          className="report-status-dot"
+                          style={{
+                            background: colors.color,
+                          }}
+                        />
+
+                        <span>{STATUS_LABEL[status]}</span>
+                      </div>
+
+                      <strong>{count}</strong>
+                    </div>
+
+                    <div className="report-bar-track">
+                      <div
+                        className="report-bar-fill"
+                        style={{
+                          width: `${(count / maxStatusCount) * 100}%`,
+                          background: colors.color,
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-surface-2)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(count / maxStatusCount) * 100}%`, background: statusColors(status).color, borderRadius: 4 }} />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="surface-card" style={{ padding: 24 }}>
-          <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 18px' }}>Top payers by volume</p>
+        {/* Top Payers */}
+        <section className="reports-card">
+          <div className="reports-card-header">
+            <div>
+              <h2>Top payers by volume</h2>
+              <p>Payers with the highest number of records.</p>
+            </div>
+
+            <div className="reports-card-icon">
+              <TrendingUp size={17} />
+            </div>
+          </div>
+
           {summary.topPayers.length === 0 ? (
-            <EmptyNote />
+            <EmptyReportState />
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {summary.topPayers.map((p) => (
-                <div key={p.payerName}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{p.payerName}</span>
-                    <span className="tabular-nums" style={{ fontWeight: 600 }}>{p.count}</span>
+            <div className="reports-bars">
+              {summary.topPayers.map((payer, index) => (
+                <div
+                  key={payer.payerName}
+                  className="report-bar-row"
+                >
+                  <div className="report-bar-meta">
+                    <div className="report-bar-label">
+                      <span className="payer-rank">
+                        {index + 1}
+                      </span>
+
+                      <span className="payer-name">
+                        {payer.payerName}
+                      </span>
+                    </div>
+
+                    <strong>{payer.count}</strong>
                   </div>
-                  <div style={{ height: 8, borderRadius: 4, background: 'var(--bg-surface-2)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', width: `${(p.count / maxPayerCount) * 100}%`, background: 'var(--accent)', borderRadius: 4 }} />
+
+                  <div className="report-bar-track">
+                    <div
+                      className="report-bar-fill report-bar-accent"
+                      style={{
+                        width: `${(payer.count / maxPayerCount) * 100}%`,
+                      }}
+                    />
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
+
+      {/* Bottom insight */}
+      <section className="reports-insight">
+        <div className="reports-insight-icon">
+          <BarChart3 size={18} />
+        </div>
+
+        <div>
+          <strong>Reporting overview</strong>
+
+          <p>
+            Your dashboard currently tracks{' '}
+            <strong>{summary.practices.total}</strong> practices,{' '}
+            <strong>{summary.providers.total}</strong> providers, and{' '}
+            <strong>{totalPayerRecords}</strong> payer records.
+          </p>
+        </div>
+      </section>
     </div>
   );
 }
 
-function SummaryCard({ label, value, sub }: { label: string; value: number; sub: string }) {
+function SummaryCard({
+  label,
+  value,
+  sub,
+  percentage,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  sub: string;
+  percentage?: number;
+  icon: typeof Building2;
+}) {
   return (
-    <div className="surface-card" style={{ padding: 20 }}>
-      <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: '0 0 6px', fontWeight: 500 }}>{label}</p>
-      <p className="tabular-nums" style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 600, margin: '0 0 4px' }}>{value}</p>
-      <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: 0 }}>{sub}</p>
+    <div className="reports-summary-card">
+      <div className="reports-summary-top">
+        <div className="reports-summary-icon">
+          <Icon size={18} />
+        </div>
+
+        {percentage !== undefined && (
+          <span className="reports-summary-percentage">
+            {percentage}%
+          </span>
+        )}
+      </div>
+
+      <div className="reports-summary-label">{label}</div>
+
+      <div className="reports-summary-value">
+        {value.toLocaleString()}
+      </div>
+
+      <div className="reports-summary-sub">{sub}</div>
     </div>
   );
 }
 
-function EmptyNote() {
+function EmptyReportState() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 13 }}>
-      <BarChart3 size={16} /> No data yet.
+    <div className="reports-empty">
+      <div className="reports-empty-icon">
+        <BarChart3 size={20} />
+      </div>
+
+      <strong>No data yet</strong>
+
+      <span>
+        Reporting data will appear here once records are available.
+      </span>
+    </div>
+  );
+}
+
+function ReportsSkeleton() {
+  return (
+    <div className="reports-page">
+      <div className="reports-skeleton-header">
+        <div className="reports-skeleton-title" />
+        <div className="reports-skeleton-button" />
+      </div>
+
+      <div className="reports-overview">
+        {[1, 2, 3, 4].map((item) => (
+          <div className="reports-summary-card reports-skeleton-card" key={item}>
+            <div className="reports-skeleton-small" />
+            <div className="reports-skeleton-large" />
+            <div className="reports-skeleton-small" />
+          </div>
+        ))}
+      </div>
+
+      <div className="reports-grid">
+        {[1, 2].map((item) => (
+          <div className="reports-card reports-skeleton-report" key={item}>
+            <div className="reports-skeleton-card-title" />
+
+            {[1, 2, 3, 4].map((row) => (
+              <div className="reports-skeleton-bar" key={row}>
+                <div />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

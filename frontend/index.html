@@ -2,23 +2,93 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#2954E0" />
+
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="color-scheme" content="light" />
+
     <meta
       name="description"
       content="BillVolt Admin Portal — the internal dashboard for managing practices, providers, payer credentialing, follow-ups, and reporting for BillVolt."
     />
+
+    <meta name="robots" content="noindex, nofollow" />
+
     <meta property="og:type" content="website" />
     <meta property="og:title" content="BillVolt Admin Portal" />
     <meta
       property="og:description"
       content="Practice management, provider credentialing, follow-up tracking, and reporting in one internal admin portal."
     />
+
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
     <title>BillVolt Admin Portal</title>
+
+    <!-- Prevent the browser from showing an unstyled/incorrect background
+         while the React application is loading. -->
+    <style>
+      html,
+      body,
+      #root {
+        margin: 0;
+        width: 100%;
+        min-height: 100%;
+      }
+
+      html {
+        background: #ffffff;
+      }
+
+      body {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background: #ffffff;
+        color: #111827;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+      }
+
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      button,
+      input,
+      textarea,
+      select {
+        font: inherit;
+      }
+
+      button {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      a {
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      ::selection {
+        background: rgba(222, 53, 119, 0.16);
+      }
+    </style>
   </head>
+
   <body>
     <div id="root"></div>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

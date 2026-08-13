@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Bell, Check, Clock, AlertTriangle } from 'lucide-react';
+import {
+  Bell,
+  Check,
+  Clock,
+  AlertTriangle,
+  ClipboardCheck,
+} from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 
@@ -10,123 +16,229 @@ interface FollowUp {
   dueDate: string;
   priority: 'low' | 'medium' | 'high';
   status: 'pending' | 'completed';
-  assignedTo?: { _id: string; name: string; email: string };
+  assignedTo?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
   daysOverdue?: number;
 }
 
 type Bucket = 'overdue' | 'today' | 'upcoming';
 
-const BUCKETS: { id: Bucket; label: string; icon: typeof Bell }[] = [
-  { id: 'overdue', label: 'Overdue', icon: AlertTriangle },
-  { id: 'today', label: 'Due today', icon: Bell },
-  { id: 'upcoming', label: 'Upcoming', icon: Clock },
-];
-
-const priorityColor = (priority: string) =>
-  priority === 'high' ? 'var(--status-denied)' : priority === 'medium' ? 'var(--status-in-progress)' : 'var(--text-muted)';
+const BUCKETS: {
+  id: Bucket;
+  label: string;
+  icon: typeof Bell;
+}[] = [
+    {
+      id: 'overdue',
+      label: 'Overdue',
+      icon: AlertTriangle,
+    },
+    {
+      id: 'today',
+      label: 'Due today',
+      icon: Bell,
+    },
+    {
+      id: 'upcoming',
+      label: 'Upcoming',
+      icon: Clock,
+    },
+  ];
 
 export function FollowUps() {
   const { showToast } = useToast();
+
   const [bucket, setBucket] = useState<Bucket>('overdue');
   const [items, setItems] = useState<FollowUp[]>([]);
-  const [counts, setCounts] = useState({ today: 0, overdue: 0, upcoming: 0 });
+  const [counts, setCounts] = useState({
+    today: 0,
+    overdue: 0,
+    upcoming: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchCounts = () => {
-    apiClient.get('/followups/counts').then((res) => setCounts(res.data)).catch(() => { });
+    apiClient
+      .get('/followups/counts')
+      .then((res) => setCounts(res.data))
+      .catch(() => { });
   };
 
   const fetchItems = () => {
     setIsLoading(true);
+
     apiClient
-      .get('/followups', { params: { bucket, limit: 50 } })
+      .get('/followups', {
+        params: {
+          bucket,
+          limit: 50,
+        },
+      })
       .then((res) => setItems(res.data.followUps))
       .catch(() => showToast('Could not load follow-ups', 'error'))
       .finally(() => setIsLoading(false));
   };
 
-  useEffect(() => { fetchCounts(); }, []);
-  useEffect(fetchItems, [bucket]);
+  useEffect(() => {
+    fetchCounts();
+  }, []);
+
+  useEffect(() => {
+    fetchItems();
+  }, [bucket]);
 
   const markComplete = async (item: FollowUp) => {
     try {
-      await apiClient.patch(`/followups/${item._id}`, { status: 'completed' });
-      setItems((prev) => prev.filter((i) => i._id !== item._id));
+      await apiClient.patch(`/followups/${item._id}`, {
+        status: 'completed',
+      });
+
+      setItems((prev) =>
+        prev.filter((followUp) => followUp._id !== item._id)
+      );
+
       fetchCounts();
+
       showToast('Marked complete');
     } catch {
       showToast('Could not update that follow-up', 'error');
     }
   };
 
-  return (
-    <div>
-      <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Follow-ups</h1>
-      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 24px' }}>
-        Tasks generated from credentialing records that need attention.
-      </p>
+  const formatDate = (date: string) =>
+    new Date(date).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
-        {BUCKETS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            onClick={() => setBucket(id)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px', borderRadius: 'var(--radius-card)',
-              border: bucket === id ? '1.5px solid var(--accent)' : '1px solid var(--border-strong)',
-              background: bucket === id ? 'var(--accent-tint)' : 'var(--bg-surface)',
-              cursor: 'pointer', flex: '1 1 160px',
-            }}
-          >
-            <Icon size={16} color={bucket === id ? 'var(--accent)' : 'var(--text-muted)'} />
-            <span style={{ fontSize: 14, fontWeight: 600, color: bucket === id ? 'var(--accent)' : 'var(--text-primary)' }}>{label}</span>
-            <span
-              className="tabular-nums"
-              style={{
-                marginLeft: 'auto', fontSize: 13, fontWeight: 700,
-                color: bucket === id ? 'var(--accent)' : 'var(--text-muted)',
-              }}
-            >
-              {counts[id]}
+  const priorityLabel = (priority: FollowUp['priority']) => {
+    if (priority === 'high') return 'High';
+    if (priority === 'medium') return 'Medium';
+    return 'Low';
+  };
+
+  return (
+    <div className="followups-page">
+      {/* Header */}
+
+      <div className="followups-header">
+        <div>
+          <div className="followups-title-row">
+            <h1>Follow-ups</h1>
+
+            <span className="followups-count">
+              {counts.overdue + counts.today + counts.upcoming}
             </span>
-          </button>
-        ))}
+          </div>
+
+          <p>
+            Tasks generated from credentialing records that need attention.
+          </p>
+        </div>
       </div>
 
-      <div className="surface-card" style={{ overflow: 'hidden' }}>
+      {/* Bucket navigation */}
+
+      <div className="followups-tabs">
+        {BUCKETS.map(({ id, label, icon: Icon }) => {
+          const active = bucket === id;
+
+          return (
+            <button
+              key={id}
+              className={`followups-tab ${active ? 'active' : ''}`}
+              onClick={() => setBucket(id)}
+            >
+              <span className="followups-tab-icon">
+                <Icon size={16} />
+              </span>
+
+              <span className="followups-tab-label">{label}</span>
+
+              <span className="followups-tab-count">
+                {counts[id]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Content */}
+
+      <div className="followups-content">
         {isLoading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>
-            Loading follow-ups…
-          </div>
+          <FollowUpSkeleton />
         ) : items.length === 0 ? (
-          <div style={{ padding: 56, textAlign: 'center' }}>
-            <Bell size={32} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>Nothing here</p>
-            <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: 0 }}>
-              No {bucket} follow-ups right now.
+          <div className="followups-empty">
+            <div className="followups-empty-icon">
+              <ClipboardCheck size={24} />
+            </div>
+
+            <h3>Nothing here</h3>
+
+            <p>
+              No {bucket === 'today' ? 'due today' : bucket} follow-ups right
+              now.
             </p>
           </div>
         ) : (
-          <div>
+          <div className="followups-list">
             {items.map((item) => (
-              <div
-                key={item._id}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 14, padding: '16px 20px',
-                  borderBottom: '1px solid var(--border)',
-                }}
-              >
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: priorityColor(item.priority), flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14.5, fontWeight: 600, margin: '0 0 3px' }}>{item.title}</p>
-                  <p style={{ fontSize: 'var(--fs-xs)', color: 'var(--text-muted)', margin: 0 }}>
-                    Due {new Date(item.dueDate).toLocaleDateString()}
-                    {item.daysOverdue ? ` · ${item.daysOverdue} day${item.daysOverdue === 1 ? '' : 's'} overdue` : ''}
-                    {item.assignedTo ? ` · ${item.assignedTo.name}` : ''}
-                  </p>
+              <div key={item._id} className="followup-row">
+                <div
+                  className={`followup-priority ${item.priority}`}
+                  title={`${priorityLabel(item.priority)} priority`}
+                />
+
+                <div className="followup-main">
+                  <div className="followup-title-row">
+                    <h3>{item.title}</h3>
+
+                    <span
+                      className={`followup-priority-label ${item.priority}`}
+                    >
+                      {priorityLabel(item.priority)}
+                    </span>
+                  </div>
+
+                  {item.description && (
+                    <p className="followup-description">
+                      {item.description}
+                    </p>
+                  )}
+
+                  <div className="followup-meta">
+                    <span>
+                      <Clock size={13} />
+                      Due {formatDate(item.dueDate)}
+                    </span>
+
+                    {item.daysOverdue ? (
+                      <span className="followup-overdue">
+                        <AlertTriangle size={13} />
+                        {item.daysOverdue} day
+                        {item.daysOverdue === 1 ? '' : 's'} overdue
+                      </span>
+                    ) : null}
+
+                    {item.assignedTo && (
+                      <span>
+                        Assigned to {item.assignedTo.name}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => markComplete(item)} style={completeButtonStyle}>
-                  <Check size={14} /> Done
+
+                <button
+                  className="followup-complete"
+                  onClick={() => markComplete(item)}
+                >
+                  <Check size={14} />
+                  <span>Done</span>
                 </button>
               </div>
             ))}
@@ -137,8 +249,21 @@ export function FollowUps() {
   );
 }
 
-const completeButtonStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 5, background: 'var(--bg-surface-2)', color: 'var(--text-secondary)',
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', padding: '7px 12px',
-  fontSize: 13, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
-};
+function FollowUpSkeleton() {
+  return (
+    <div className="followup-skeleton">
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div key={item} className="followup-skeleton-row">
+          <div className="followup-skeleton-dot" />
+
+          <div className="followup-skeleton-content">
+            <div className="followup-skeleton-title" />
+            <div className="followup-skeleton-meta" />
+          </div>
+
+          <div className="followup-skeleton-button" />
+        </div>
+      ))}
+    </div>
+  );
+}

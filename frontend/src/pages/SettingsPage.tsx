@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Building2, Clock3, Mail, BellRing, ShieldCheck, Save } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { useAuth } from '../context/AuthContext';
@@ -12,11 +13,18 @@ interface OrgSettings {
   notifyOnOverdueFollowUps: boolean;
 }
 
-const TIMEZONES = ['America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles', 'UTC'];
+const TIMEZONES = [
+  'America/New_York',
+  'America/Chicago',
+  'America/Denver',
+  'America/Los_Angeles',
+  'UTC',
+];
 
 export function SettingsPage() {
   const { user } = useAuth();
   const { showToast } = useToast();
+
   const isAdmin = user?.role === 'admin';
 
   const [settings, setSettings] = useState<OrgSettings | null>(null);
@@ -27,15 +35,20 @@ export function SettingsPage() {
       .get('/settings')
       .then((res) => setSettings(res.data.settings))
       .catch(() => showToast('Could not load settings', 'error'));
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!settings) return;
+
+    if (!settings || !isAdmin) return;
+
     setIsSaving(true);
+
     try {
       const res = await apiClient.patch('/settings', settings);
+
       setSettings(res.data.settings);
       showToast('Settings saved');
     } catch {
@@ -46,102 +59,304 @@ export function SettingsPage() {
   };
 
   if (!settings) {
-    return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>Loading settings…</div>;
+    return (
+      <div className="settings-loading">
+        <div className="settings-loading-spinner" />
+        <span>Loading settings…</span>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Settings</h1>
-      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 24px' }}>
-        Organization preferences and portal-wide behavior.
-      </p>
+    <div className="settings-page">
 
-      {!isAdmin && (
-        <div className="empty-state" style={{ marginBottom: 20, padding: '20px 24px' }}>
-          <p style={{ fontSize: 13.5, color: 'var(--text-secondary)', margin: 0 }}>
-            You can view these settings, but only an admin can change them.
+      {/* Header */}
+      <div className="settings-header">
+        <div>
+          <div className="settings-eyebrow">
+            <span className="settings-eyebrow-dot" />
+            Organization
+          </div>
+
+          <h1 className="settings-title">
+            Settings
+          </h1>
+
+          <p className="settings-description">
+            Manage organization preferences and portal-wide behavior.
           </p>
+        </div>
+
+        <div className="settings-header-icon">
+          <ShieldCheck size={21} />
+        </div>
+      </div>
+
+      {/* Permission notice */}
+      {!isAdmin && (
+        <div className="settings-permission-banner">
+          <div className="settings-permission-icon">
+            <ShieldCheck size={17} />
+          </div>
+
+          <div>
+            <p className="settings-permission-title">
+              View-only access
+            </p>
+
+            <p className="settings-permission-text">
+              You can view organization settings, but only an administrator
+              can make changes.
+            </p>
+          </div>
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="surface-card" style={{ padding: 28, maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div>
-          <label style={labelStyle}>Organization name</label>
-          <input
-            disabled={!isAdmin}
-            value={settings.orgName}
-            onChange={(e) => setSettings({ ...settings, orgName: e.target.value })}
-            className="input-control"
-          />
-        </div>
+      <form onSubmit={handleSubmit} className="settings-layout">
 
-        <div>
-          <label style={labelStyle}>Timezone</label>
-          <select
-            disabled={!isAdmin}
-            value={settings.timezone}
-            onChange={(e) => setSettings({ ...settings, timezone: e.target.value })}
-            className="select-control"
-          >
-            {TIMEZONES.map((tz) => (
-              <option key={tz} value={tz}>{tz}</option>
-            ))}
-          </select>
-        </div>
+        {/* Organization */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">
+              <Building2 size={17} />
+            </div>
 
-        <div>
-          <label style={labelStyle}>Contact email</label>
-          <input
-            disabled={!isAdmin}
-            type="email"
-            value={settings.contactEmail || ''}
-            onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-            className="input-control"
-          />
-        </div>
+            <div>
+              <h2>Organization</h2>
+              <p>Basic information about your organization.</p>
+            </div>
+          </div>
 
-        <div>
-          <label style={labelStyle}>Session timeout (minutes)</label>
-          <input
-            disabled={!isAdmin}
-            type="number"
-            min={5}
-            max={480}
-            value={settings.sessionTimeoutMinutes}
-            onChange={(e) => setSettings({ ...settings, sessionTimeoutMinutes: Number(e.target.value) })}
-            className="input-control"
-          />
-          <p style={{ fontSize: 12.5, color: 'var(--text-muted)', margin: '6px 0 0' }}>
-            Users are automatically signed out after this many minutes of inactivity.
-          </p>
-        </div>
+          <div className="settings-card-body">
 
-        <label style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, cursor: isAdmin ? 'pointer' : 'default' }}>
-          <input
-            disabled={!isAdmin}
-            type="checkbox"
-            checked={settings.notifyOnOverdueFollowUps}
-            onChange={(e) => setSettings({ ...settings, notifyOnOverdueFollowUps: e.target.checked })}
-          />
-          Notify on overdue follow-ups
-        </label>
+            <div className="settings-field">
+              <label htmlFor="orgName">
+                Organization name
+              </label>
 
+              <input
+                id="orgName"
+                disabled={!isAdmin}
+                value={settings.orgName}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    orgName: e.target.value,
+                  })
+                }
+                className="input-control"
+                placeholder="Organization name"
+              />
+            </div>
+
+            <div className="settings-field">
+              <label htmlFor="contactEmail">
+                Contact email
+              </label>
+
+              <div className="settings-input-icon">
+                <Mail size={15} />
+
+                <input
+                  id="contactEmail"
+                  disabled={!isAdmin}
+                  type="email"
+                  value={settings.contactEmail || ''}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      contactEmail: e.target.value,
+                    })
+                  }
+                  className="input-control"
+                  placeholder="admin@example.com"
+                />
+              </div>
+
+              <p className="settings-help">
+                Used for organization-level notifications and contact information.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Regional settings */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">
+              <Clock3 size={17} />
+            </div>
+
+            <div>
+              <h2>Regional settings</h2>
+              <p>Control how dates and times are handled across the portal.</p>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+
+            <div className="settings-field">
+              <label htmlFor="timezone">
+                Timezone
+              </label>
+
+              <select
+                id="timezone"
+                disabled={!isAdmin}
+                value={settings.timezone}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    timezone: e.target.value,
+                  })
+                }
+                className="select-control"
+              >
+                {TIMEZONES.map((timezone) => (
+                  <option key={timezone} value={timezone}>
+                    {timezone}
+                  </option>
+                ))}
+              </select>
+
+              <p className="settings-help">
+                Follow-up dates and activity timestamps use this timezone.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Security */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">
+              <ShieldCheck size={17} />
+            </div>
+
+            <div>
+              <h2>Security</h2>
+              <p>Configure session behavior for portal users.</p>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+
+            <div className="settings-field">
+              <label htmlFor="sessionTimeout">
+                Session timeout
+              </label>
+
+              <div className="settings-number-row">
+                <input
+                  id="sessionTimeout"
+                  disabled={!isAdmin}
+                  type="number"
+                  min={5}
+                  max={480}
+                  value={settings.sessionTimeoutMinutes}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      sessionTimeoutMinutes: Number(e.target.value),
+                    })
+                  }
+                  className="input-control"
+                />
+
+                <span className="settings-number-unit">
+                  minutes
+                </span>
+              </div>
+
+              <p className="settings-help">
+                Users are automatically signed out after this period
+                of inactivity. Allowed range: 5–480 minutes.
+              </p>
+            </div>
+
+          </div>
+        </section>
+
+        {/* Notifications */}
+        <section className="settings-card">
+          <div className="settings-card-header">
+            <div className="settings-card-icon">
+              <BellRing size={17} />
+            </div>
+
+            <div>
+              <h2>Notifications</h2>
+              <p>Choose which organization-level alerts are enabled.</p>
+            </div>
+          </div>
+
+          <div className="settings-card-body">
+
+            <label
+              className={`settings-toggle-row ${!isAdmin ? 'settings-toggle-disabled' : ''
+                }`}
+            >
+              <div className="settings-toggle-content">
+                <div className="settings-toggle-icon">
+                  <BellRing size={15} />
+                </div>
+
+                <div>
+                  <span className="settings-toggle-title">
+                    Overdue follow-ups
+                  </span>
+
+                  <span className="settings-toggle-description">
+                    Notify when follow-ups remain incomplete after their due date.
+                  </span>
+                </div>
+              </div>
+
+              <span className="settings-switch">
+                <input
+                  disabled={!isAdmin}
+                  type="checkbox"
+                  checked={settings.notifyOnOverdueFollowUps}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      notifyOnOverdueFollowUps: e.target.checked,
+                    })
+                  }
+                />
+
+                <span className="settings-switch-track" />
+              </span>
+            </label>
+
+          </div>
+        </section>
+
+        {/* Footer actions */}
         {isAdmin && (
-          <button type="submit" disabled={isSaving} style={buttonStyle(isSaving)}>
-            {isSaving ? 'Saving…' : 'Save settings'}
-          </button>
+          <div className="settings-actions">
+            <div className="settings-save-copy">
+              <span className="settings-save-status">
+                <span className="settings-save-dot" />
+                Changes are saved organization-wide
+              </span>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="settings-save-button"
+            >
+              <Save size={15} />
+
+              {isSaving ? 'Saving…' : 'Save settings'}
+            </button>
+          </div>
         )}
+
       </form>
     </div>
   );
 }
-
-const labelStyle: React.CSSProperties = {
-  display: 'block', fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6,
-};
-
-const buttonStyle = (disabled: boolean): React.CSSProperties => ({
-  padding: '12px', fontSize: 14.5, fontWeight: 600, color: '#fff',
-  background: disabled ? 'var(--text-muted)' : 'var(--accent)', border: 'none',
-  borderRadius: 'var(--radius)', cursor: disabled ? 'not-allowed' : 'pointer',
-});

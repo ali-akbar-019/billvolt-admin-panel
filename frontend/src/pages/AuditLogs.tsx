@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ScrollText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ScrollText, SlidersHorizontal } from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 
@@ -11,7 +11,11 @@ interface AuditLog {
   metadata?: Record<string, unknown>;
   ipAddress?: string;
   createdAt: string;
-  userId?: { _id: string; name: string; email: string };
+  userId?: {
+    _id: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface Pagination {
@@ -41,6 +45,7 @@ const RESOURCE_OPTIONS = [
 
 const formatWhen = (iso: string) => {
   const d = new Date(iso);
+
   return d.toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
@@ -50,10 +55,27 @@ const formatWhen = (iso: string) => {
   });
 };
 
+const formatAction = (action: string) =>
+  action.replace(/_/g, ' ');
+
+const getActionClass = (action: string) => {
+  if (action === 'delete') return 'audit-action audit-action-danger';
+  if (action === 'view_sensitive') return 'audit-action audit-action-warning';
+
+  return 'audit-action audit-action-default';
+};
+
 export function AuditLogs() {
   const { showToast } = useToast();
+
   const [logs, setLogs] = useState<AuditLog[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 50, total: 0, pages: 1 });
+  const [pagination, setPagination] = useState<Pagination>({
+    page: 1,
+    limit: 50,
+    total: 0,
+    pages: 1,
+  });
+
   const [isLoading, setIsLoading] = useState(true);
 
   const [action, setAction] = useState('');
@@ -63,11 +85,22 @@ export function AuditLogs() {
 
   const fetchLogs = (page = 1) => {
     setIsLoading(true);
-    const params: Record<string, string> = { page: String(page), limit: String(pagination.limit) };
+
+    const params: Record<string, string> = {
+      page: String(page),
+      limit: String(pagination.limit),
+    };
+
     if (action) params.action = action;
     if (resourceType) params.resourceType = resourceType;
-    if (from) params.from = new Date(from).toISOString();
-    if (to) params.to = new Date(to).toISOString();
+
+    if (from) {
+      params.from = new Date(`${from}T00:00:00`).toISOString();
+    }
+
+    if (to) {
+      params.to = new Date(`${to}T23:59:59.999`).toISOString();
+    }
 
     apiClient
       .get('/audit-logs', { params })
@@ -75,8 +108,12 @@ export function AuditLogs() {
         setLogs(res.data.logs);
         setPagination(res.data.pagination);
       })
-      .catch(() => showToast('Could not load audit logs', 'error'))
-      .finally(() => setIsLoading(false));
+      .catch(() => {
+        showToast('Could not load audit logs', 'error');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   useEffect(() => {
@@ -84,131 +121,265 @@ export function AuditLogs() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const anyFilters = action || resourceType || from || to;
+  const anyFilters = Boolean(action || resourceType || from || to);
 
   const clearFilters = () => {
     setAction('');
     setResourceType('');
     setFrom('');
     setTo('');
-    fetchLogs(1);
+
+    // Use the cleared values immediately rather than waiting for state updates.
+    setIsLoading(true);
+
+    apiClient
+      .get('/audit-logs', {
+        params: {
+          page: '1',
+          limit: String(pagination.limit),
+        },
+      })
+      .then((res) => {
+        setLogs(res.data.logs);
+        setPagination(res.data.pagination);
+      })
+      .catch(() => {
+        showToast('Could not load audit logs', 'error');
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6, flexWrap: 'wrap', gap: 12 }}>
+    <div className="audit-page">
+
+      {/* Header */}
+      <div className="audit-header">
         <div>
-          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Audit log</h1>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
-            Every sensitive-data reveal and record change, who did it and when.
+          <div className="audit-eyebrow">
+            <span className="audit-eyebrow-dot" />
+            Security & compliance
+          </div>
+
+          <h1 className="audit-title">
+            Audit log
+          </h1>
+
+          <p className="audit-description">
+            Track sensitive-data access, record changes, and administrative activity across your organization.
           </p>
         </div>
+
+        <div className="audit-header-meta">
+          <div className="audit-header-icon">
+            <ScrollText size={18} />
+          </div>
+
+          <div>
+            <span className="audit-header-meta-label">
+              Total activity
+            </span>
+
+            <strong className="audit-header-meta-value tabular-nums">
+              {pagination.total}
+            </strong>
+          </div>
+        </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-        <div style={{ flex: '1 1 180px', maxWidth: '100%' }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>Action</label>
-          <select value={action} onChange={(e) => setAction(e.target.value)} className="select-control">
-            <option value="">All actions</option>
-            {ACTION_OPTIONS.map((a) => (
-              <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>
-            ))}
-          </select>
+      {/* Filters */}
+      <div className="audit-filter-card">
+        <div className="audit-filter-heading">
+          <div className="audit-filter-icon">
+            <SlidersHorizontal size={15} />
+          </div>
+
+          <div>
+            <p className="audit-filter-title">
+              Filter activity
+            </p>
+
+            <p className="audit-filter-subtitle">
+              Narrow the audit trail by action, resource, or date.
+            </p>
+          </div>
         </div>
 
-        <div style={{ flex: '1 1 180px', maxWidth: '100%' }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>Resource</label>
-          <select value={resourceType} onChange={(e) => setResourceType(e.target.value)} className="select-control">
-            <option value="">All resources</option>
-            {RESOURCE_OPTIONS.map((r) => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-        </div>
+        <div className="audit-filters">
 
-        <div style={{ flex: '1 1 160px', maxWidth: '100%' }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>From</label>
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="input-control" />
-        </div>
+          <div className="audit-field">
+            <label>Action</label>
 
-        <div style={{ flex: '1 1 160px', maxWidth: '100%' }}>
-          <label style={{ display: 'block', fontSize: 12.5, fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 }}>To</label>
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="input-control" />
-        </div>
-
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => fetchLogs(1)}
-            style={{
-              background: 'var(--accent)', color: '#fff', border: 'none', borderRadius: 'var(--radius)',
-              padding: '10px 18px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            Filter
-          </button>
-          {anyFilters && (
-            <button
-              onClick={clearFilters}
-              style={{
-                background: 'var(--bg-surface)', color: 'var(--text-secondary)', border: '1px solid var(--border-strong)',
-                borderRadius: 'var(--radius)', padding: '10px 14px', fontSize: 14, fontWeight: 600, cursor: 'pointer',
-              }}
+            <select
+              value={action}
+              onChange={(e) => setAction(e.target.value)}
+              className="select-control"
             >
-              Clear
+              <option value="">All actions</option>
+
+              {ACTION_OPTIONS.map((item) => (
+                <option key={item} value={item}>
+                  {formatAction(item)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="audit-field">
+            <label>Resource</label>
+
+            <select
+              value={resourceType}
+              onChange={(e) => setResourceType(e.target.value)}
+              className="select-control"
+            >
+              <option value="">All resources</option>
+
+              {RESOURCE_OPTIONS.map((resource) => (
+                <option key={resource} value={resource}>
+                  {resource}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="audit-field">
+            <label>From</label>
+
+            <input
+              type="date"
+              value={from}
+              onChange={(e) => setFrom(e.target.value)}
+              className="input-control"
+            />
+          </div>
+
+          <div className="audit-field">
+            <label>To</label>
+
+            <input
+              type="date"
+              value={to}
+              onChange={(e) => setTo(e.target.value)}
+              className="input-control"
+            />
+          </div>
+
+          <div className="audit-filter-actions">
+            <button
+              type="button"
+              onClick={() => fetchLogs(1)}
+              className="audit-filter-button"
+            >
+              Filter
             </button>
-          )}
+
+            {anyFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="audit-clear-button"
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="surface-card" style={{ overflow: 'hidden' }}>
+      {/* Table */}
+      <div className="surface-card audit-table-card">
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading audit log…</div>
+          <div className="audit-loading">
+            <div className="audit-loading-spinner" />
+
+            <span>
+              Loading audit activity…
+            </span>
+          </div>
         ) : logs.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">
+          <div className="empty-state audit-empty">
+            <div className="empty-state-icon audit-empty-icon">
               <ScrollText size={26} strokeWidth={1.75} />
             </div>
-            <p style={{ fontSize: 17, fontWeight: 600, margin: '0 0 6px', fontFamily: 'var(--font-display)' }}>No audit entries</p>
-            <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: 0 }}>
-              Records appear here as changes and sensitive-data reveals happen.
+
+            <p className="audit-empty-title">
+              No audit entries
+            </p>
+
+            <p className="audit-empty-description">
+              Records will appear here as changes and sensitive-data
+              access occur.
             </p>
           </div>
         ) : (
           <div className="table-scroll">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 760 }}>
+            <table className="audit-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['When', 'User', 'Action', 'Resource', 'Details', 'IP'].map((h) => (
-                    <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      {h}
-                    </th>
-                  ))}
+                <tr>
+                  <th>When</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Resource</th>
+                  <th>Details</th>
+                  <th>IP address</th>
                 </tr>
               </thead>
+
               <tbody>
                 {logs.map((log) => (
-                  <tr key={log._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }} className="tabular-nums">
+                  <tr key={log._id}>
+
+                    <td className="audit-time tabular-nums">
                       {formatWhen(log.createdAt)}
                     </td>
-                    <td style={{ padding: '14px 20px', fontWeight: 500 }}>{log.userId?.name || 'Unknown'}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <span
-                        style={{
-                          fontSize: 12.5, fontWeight: 600, padding: '4px 12px', borderRadius: 20,
-                          background: log.action === 'delete' ? 'var(--status-denied-tint)' : log.action === 'view_sensitive' ? 'var(--status-in-progress-tint)' : 'var(--accent-tint)',
-                          color: log.action === 'delete' ? 'var(--status-denied)' : log.action === 'view_sensitive' ? 'var(--status-in-progress)' : 'var(--accent)',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {log.action.replace(/_/g, ' ')}
+
+                    <td>
+                      <div className="audit-user">
+                        <div className="audit-user-avatar">
+                          {(log.userId?.name || 'U')
+                            .charAt(0)
+                            .toUpperCase()}
+                        </div>
+
+                        <div className="audit-user-info">
+                          <span className="audit-user-name">
+                            {log.userId?.name || 'Unknown'}
+                          </span>
+
+                          {log.userId?.email && (
+                            <span className="audit-user-email">
+                              {log.userId.email}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+
+                    <td>
+                      <span className={getActionClass(log.action)}>
+                        <span className="audit-action-dot" />
+                        {formatAction(log.action)}
                       </span>
                     </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{log.resourceType}</td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)', fontSize: 13 }}>
+
+                    <td>
+                      <span className="audit-resource">
+                        {log.resourceType}
+                      </span>
+                    </td>
+
+                    <td>
                       <MetaPreview metadata={log.metadata} />
                     </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)', fontSize: 13 }}>{log.ipAddress || '—'}</td>
+
+                    <td>
+                      <span className="audit-ip">
+                        {log.ipAddress || '—'}
+                      </span>
+                    </td>
+
                   </tr>
                 ))}
               </tbody>
@@ -217,47 +388,71 @@ export function AuditLogs() {
         )}
       </div>
 
+      {/* Pagination */}
       {pagination.total > 0 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, flexWrap: 'wrap', gap: 10 }}>
-          <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>
-            {pagination.total} entr{pagination.total === 1 ? 'y' : 'ies'} · page {pagination.page} of {pagination.pages}
+        <div className="audit-pagination">
+
+          <p className="audit-pagination-info">
+            <strong>{pagination.total}</strong>{' '}
+            {pagination.total === 1 ? 'entry' : 'entries'}
+            <span className="audit-pagination-separator">·</span>
+            Page {pagination.page} of {pagination.pages}
           </p>
-          <div style={{ display: 'flex', gap: 8 }}>
+
+          <div className="audit-pagination-actions">
             <button
+              type="button"
               disabled={pagination.page <= 1}
               onClick={() => fetchLogs(pagination.page - 1)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', fontSize: 13.5, fontWeight: 600,
-                border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', background: 'var(--bg-surface)',
-                color: pagination.page <= 1 ? 'var(--text-muted)' : 'var(--text-secondary)', cursor: pagination.page <= 1 ? 'not-allowed' : 'pointer',
-              }}
+              className="audit-page-button"
             >
-              <ChevronLeft size={15} /> Prev
+              <ChevronLeft size={15} />
+              Previous
             </button>
+
             <button
+              type="button"
               disabled={pagination.page >= pagination.pages}
               onClick={() => fetchLogs(pagination.page + 1)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 6, padding: '9px 14px', fontSize: 13.5, fontWeight: 600,
-                border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', background: 'var(--bg-surface)',
-                color: pagination.page >= pagination.pages ? 'var(--text-muted)' : 'var(--text-secondary)', cursor: pagination.page >= pagination.pages ? 'not-allowed' : 'pointer',
-              }}
+              className="audit-page-button"
             >
-              Next <ChevronRight size={15} />
+              Next
+              <ChevronRight size={15} />
             </button>
           </div>
+
         </div>
       )}
     </div>
   );
 }
 
-function MetaPreview({ metadata }: { metadata?: Record<string, unknown> }) {
-  if (!metadata || Object.keys(metadata).length === 0) return <span>—</span>;
+function MetaPreview({
+  metadata,
+}: {
+  metadata?: Record<string, unknown>;
+}) {
+  if (!metadata || Object.keys(metadata).length === 0) {
+    return <span className="audit-meta-empty">—</span>;
+  }
 
   const text = Object.entries(metadata)
-    .map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`)
+    .map(([key, value]) => {
+      const formattedValue =
+        typeof value === 'object'
+          ? JSON.stringify(value)
+          : String(value);
+
+      return `${key}: ${formattedValue}`;
+    })
     .join(', ');
 
-  return <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 320, display: 'block' }}>{text}</span>;
+  return (
+    <span
+      className="audit-meta"
+      title={text}
+    >
+      {text}
+    </span>
+  );
 }

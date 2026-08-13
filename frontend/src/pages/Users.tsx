@@ -1,5 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Plus, Trash2, Building2 } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Plus,
+  Trash2,
+  Building2,
+  Users as UsersIcon,
+  ShieldCheck,
+  UserCheck,
+  Search,
+  MoreHorizontal,
+  ChevronDown,
+  X,
+} from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -7,31 +18,42 @@ import { AddUserModal } from '../components/AddUserModal';
 import type { User, Practice } from '../types';
 
 const roleBadge = (role: string) => ({
-  background: role === 'admin' ? 'var(--accent-tint)' : 'var(--status-not-started-tint)',
-  color: role === 'admin' ? 'var(--accent)' : 'var(--text-secondary)',
+  background:
+    role === 'admin'
+      ? 'var(--accent-tint)'
+      : 'var(--status-not-started-tint)',
+  color:
+    role === 'admin'
+      ? 'var(--accent)'
+      : 'var(--text-secondary)',
 });
 
 const statusBadge = (status: string) => ({
-  background: status === 'active' ? 'var(--status-approved-tint)' : 'var(--status-denied-tint)',
-  color: status === 'active' ? 'var(--status-approved)' : 'var(--status-denied)',
+  background:
+    status === 'active'
+      ? 'var(--status-approved-tint)'
+      : 'var(--status-denied-tint)',
+  color:
+    status === 'active'
+      ? 'var(--status-approved)'
+      : 'var(--status-denied)',
 });
-
-const badgeStyle: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 600, padding: '4px 12px', borderRadius: 20, textTransform: 'capitalize',
-};
 
 export function Users() {
   const { user: currentUser } = useAuth();
   const { showToast } = useToast();
+
   const [users, setUsers] = useState<User[]>([]);
   const [practices, setPractices] = useState<Practice[]>([]);
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
 
   const fetchUsers = () => {
     setIsLoading(true);
+
     apiClient
       .get('/users')
       .then((res) => setUsers(res.data.users))
@@ -39,195 +61,395 @@ export function Users() {
       .finally(() => setIsLoading(false));
   };
 
-  useEffect(fetchUsers, []);
+  useEffect(() => {
+    fetchUsers();
+  }, []);
 
   useEffect(() => {
     apiClient
       .get('/practices', { params: { limit: 100 } })
       .then((res) => setPractices(res.data.practices))
-      .catch(() => showToast('Could not load practices for assignment', 'error'));
+      .catch(() =>
+        showToast('Could not load practices for assignment', 'error')
+      );
   }, []);
 
-  const updateUser = async (id: string, payload: Partial<Pick<User, 'role' | 'status' | 'assignedPracticeIds'>>) => {
+  const updateUser = async (
+    id: string,
+    payload: Partial<
+      Pick<User, 'role' | 'status' | 'assignedPracticeIds'>
+    >
+  ) => {
     setBusyId(id);
+
     try {
       const res = await apiClient.patch(`/users/${id}`, payload);
-      setUsers((prev) => prev.map((u) => (u._id === id ? res.data.user : u)));
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u._id === id ? res.data.user : u
+        )
+      );
+
       showToast('User updated');
     } catch (err: any) {
-      showToast(err?.response?.data?.error || 'Update failed', 'error');
+      showToast(
+        err?.response?.data?.error || 'Update failed',
+        'error'
+      );
     } finally {
       setBusyId(null);
     }
   };
 
-  const togglePractice = (userId: string, practiceId: string) => {
+  const togglePractice = (
+    userId: string,
+    practiceId: string
+  ) => {
     const target = users.find((u) => u._id === userId);
+
     if (!target) return;
+
     const current = target.assignedPracticeIds || [];
+
     const next = current.includes(practiceId)
       ? current.filter((p) => p !== practiceId)
       : [...current, practiceId];
-    updateUser(userId, { assignedPracticeIds: next });
+
+    updateUser(userId, {
+      assignedPracticeIds: next,
+    });
   };
 
   const deleteUser = async (id: string) => {
-    if (!confirm('Remove this user? This cannot be undone.')) return;
+    const target = users.find((u) => u._id === id);
+
+    if (!target) return;
+
+    if (
+      !confirm(
+        `Remove ${target.name}? This action cannot be undone.`
+      )
+    ) {
+      return;
+    }
+
     setBusyId(id);
+
     try {
       await apiClient.delete(`/users/${id}`);
-      setUsers((prev) => prev.filter((u) => u._id !== id));
+
+      setUsers((prev) =>
+        prev.filter((u) => u._id !== id)
+      );
+
       showToast('User removed');
     } catch (err: any) {
-      showToast(err?.response?.data?.error || 'Delete failed', 'error');
+      showToast(
+        err?.response?.data?.error || 'Delete failed',
+        'error'
+      );
     } finally {
       setBusyId(null);
     }
   };
 
+  const filteredUsers = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) return users;
+
+    return users.filter(
+      (u) =>
+        u.name.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        u.role.toLowerCase().includes(query) ||
+        u.status.toLowerCase().includes(query)
+    );
+  }, [users, search]);
+
+  const activeUsers = users.filter(
+    (u) => u.status === 'active'
+  ).length;
+
+  const adminUsers = users.filter(
+    (u) => u.role === 'admin'
+  ).length;
+
+  const staffUsers = users.filter(
+    (u) => u.role === 'staff'
+  ).length;
+
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+    <div className="users-page">
+      {/* Header */}
+      <div className="users-header">
         <div>
-          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>User management</h1>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
-            Manage staff accounts and roles.
+          <div className="users-title-row">
+            <div className="users-title-icon">
+              <UsersIcon size={19} />
+            </div>
+
+            <h1 className="users-title">
+              User management
+            </h1>
+          </div>
+
+          <p className="users-subtitle">
+            Manage staff accounts, permissions, and practice access.
           </p>
         </div>
+
         <button
+          className="users-primary-btn"
           onClick={() => setShowModal(true)}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
-            border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
-          }}
         >
-          <Plus size={16} /> Add user
+          <Plus size={16} />
+          Add user
         </button>
       </div>
 
-      <div className="surface-card" style={{ overflow: 'hidden' }}>
+      {/* Stats */}
+      <div className="users-stats">
+        <MiniStat
+          icon={<UsersIcon size={16} />}
+          label="Total users"
+          value={users.length}
+        />
+
+        <MiniStat
+          icon={<UserCheck size={16} />}
+          label="Active"
+          value={activeUsers}
+        />
+
+        <MiniStat
+          icon={<ShieldCheck size={16} />}
+          label="Administrators"
+          value={adminUsers}
+        />
+
+        <MiniStat
+          icon={<Building2 size={16} />}
+          label="Staff"
+          value={staffUsers}
+        />
+      </div>
+
+      {/* Main card */}
+      <div className="surface-card users-card">
+        {/* Toolbar */}
+        <div className="users-toolbar">
+          <div className="users-search">
+            <Search size={16} />
+
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search users..."
+            />
+
+            {search && (
+              <button
+                className="users-search-clear"
+                onClick={() => setSearch('')}
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+
+          <span className="users-result-count">
+            {filteredUsers.length} of {users.length} users
+          </span>
+        </div>
+
+        {/* Loading */}
         {isLoading ? (
-          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)', fontSize: 14 }}>Loading users…</div>
+          <div className="users-loading">
+            Loading users…
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <EmptyState
+            hasSearch={Boolean(search)}
+            onAdd={() => setShowModal(true)}
+          />
         ) : (
           <div className="table-scroll">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 640 }}>
+            <table className="users-table">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Name', 'Email', 'Role', 'Practices', 'Status', 'Last login', ''].map((h) => (
-                    <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      {h}
-                    </th>
-                  ))}
+                <tr>
+                  <th>User</th>
+                  <th>Role</th>
+                  <th>Practice access</th>
+                  <th>Status</th>
+                  <th>Last login</th>
+                  <th />
                 </tr>
               </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u._id} style={{ borderBottom: '1px solid var(--border)', opacity: busyId === u._id ? 0.5 : 1 }}>
-                    <td style={{ padding: '14px 20px', fontWeight: 500 }}>{u.name}</td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{u.email}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <select
-                        value={u.role}
-                        disabled={u._id === currentUser?._id || busyId === u._id}
-                        onChange={(e) => updateUser(u._id, { role: e.target.value as User['role'] })}
-                        className="status-select"
-                        style={{ ...badgeStyle, ...roleBadge(u.role), border: 'none', cursor: 'pointer' }}
-                      >
-                        <option value="staff">Staff</option>
-                        <option value="admin">Admin</option>
-                      </select>
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      {u.role === 'admin' ? (
-                        <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>All practices</span>
-                      ) : (
-                        <div style={{ position: 'relative' }}>
-                          <button
-                            disabled={busyId === u._id}
-                            onClick={() => setAssigningId(assigningId === u._id ? null : u._id)}
-                            style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 6, background: 'var(--bg-subtle)',
-                              border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '6px 10px',
-                              fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)', cursor: 'pointer',
-                            }}
-                          >
-                            <Building2 size={14} />
-                            {(u.assignedPracticeIds || []).length} assigned
-                          </button>
 
-                          {assigningId === u._id && (
-                            <div
-                              className="surface-card"
-                              style={{
-                                position: 'absolute', left: 0, top: '100%', marginTop: 6, zIndex: 30,
-                                width: 280, maxWidth: '90vw', maxHeight: 260, overflowY: 'auto', padding: 12, boxShadow: '0 8px 28px rgba(16,22,43,0.18)',
-                              }}
-                            >
-                              <p style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em', margin: '0 0 10px' }}>
-                                Assign practices
-                              </p>
-                              {practices.length === 0 ? (
-                                <p style={{ fontSize: 13, color: 'var(--text-muted)', margin: 0 }}>No practices yet.</p>
-                              ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                  {practices.map((p) => {
-                                    const checked = (u.assignedPracticeIds || []).includes(p._id);
-                                    return (
-                                      <label
-                                        key={p._id}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 6px', borderRadius: 6, cursor: 'pointer', fontSize: 13.5 }}
-                                        onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--accent-tint)')}
-                                        onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
-                                      >
-                                        <input
-                                          type="checkbox"
-                                          checked={checked}
-                                          onChange={() => togglePractice(u._id, p._id)}
-                                          style={{ accentColor: 'var(--accent)' }}
-                                        />
-                                        {p.groupName}
-                                      </label>
-                                    );
-                                  })}
-                                </div>
+              <tbody>
+                {filteredUsers.map((u) => {
+                  const isCurrent =
+                    u._id === currentUser?._id;
+
+                  const isBusy =
+                    busyId === u._id;
+
+                  const assignedCount =
+                    (u.assignedPracticeIds || []).length;
+
+                  return (
+                    <tr
+                      key={u._id}
+                      className={
+                        isBusy
+                          ? 'users-row users-row-busy'
+                          : 'users-row'
+                      }
+                    >
+                      <td className="users-user-cell">
+                        <div className="users-user">
+                          <Avatar name={u.name} />
+
+                          <div className="users-user-info">
+                            <div className="users-name-row">
+                              <span className="users-name">
+                                {u.name}
+                              </span>
+
+                              {isCurrent && (
+                                <span className="users-you">
+                                  You
+                                </span>
                               )}
-                              <button
-                                onClick={() => setAssigningId(null)}
-                                style={{ marginTop: 10, width: '100%', padding: '8px', fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)', background: 'var(--bg-subtle)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', cursor: 'pointer' }}
-                              >
-                                Done
-                              </button>
                             </div>
-                          )}
+
+                            <span className="users-email">
+                              {u.email}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <button
-                        disabled={u._id === currentUser?._id || busyId === u._id}
-                        onClick={() => updateUser(u._id, { status: u.status === 'active' ? 'disabled' : 'active' })}
-                        style={{ ...badgeStyle, ...statusBadge(u.status), border: 'none', cursor: u._id === currentUser?._id ? 'default' : 'pointer' }}
-                      >
-                        {u.status}
-                      </button>
-                    </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
-                      {u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleDateString() : 'Never'}
-                    </td>
-                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                      {u._id !== currentUser?._id && (
-                        <button
-                          onClick={() => deleteUser(u._id)}
-                          disabled={busyId === u._id}
-                          aria-label={`Remove ${u.name}`}
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--status-denied)', display: 'inline-flex' }}
+                      </td>
+
+                      <td>
+                        <select
+                          value={u.role}
+                          disabled={
+                            isCurrent || isBusy
+                          }
+                          onChange={(e) =>
+                            updateUser(u._id, {
+                              role: e.target.value as User['role'],
+                            })
+                          }
+                          className="users-role-select"
+                          style={roleBadge(u.role)}
                         >
-                          <Trash2 size={16} />
+                          <option value="staff">
+                            Staff
+                          </option>
+
+                          <option value="admin">
+                            Admin
+                          </option>
+                        </select>
+                      </td>
+
+                      <td>
+                        {u.role === 'admin' ? (
+                          <span className="users-all-practices">
+                            <Building2 size={14} />
+                            All practices
+                          </span>
+                        ) : (
+                          <div className="users-practice-wrapper">
+                            <button
+                              disabled={isBusy}
+                              className="users-practice-btn"
+                              onClick={() =>
+                                setAssigningId(
+                                  assigningId === u._id
+                                    ? null
+                                    : u._id
+                                )
+                              }
+                            >
+                              <Building2 size={14} />
+
+                              {assignedCount === 0
+                                ? 'No practices'
+                                : `${assignedCount} ${assignedCount === 1
+                                  ? 'practice'
+                                  : 'practices'
+                                }`}
+
+                              <ChevronDown size={13} />
+                            </button>
+
+                            {assigningId === u._id && (
+                              <PracticePopover
+                                user={u}
+                                practices={practices}
+                                onToggle={togglePractice}
+                                onClose={() =>
+                                  setAssigningId(null)
+                                }
+                              />
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      <td>
+                        <button
+                          disabled={
+                            isCurrent || isBusy
+                          }
+                          onClick={() =>
+                            updateUser(u._id, {
+                              status:
+                                u.status === 'active'
+                                  ? 'disabled'
+                                  : 'active',
+                            })
+                          }
+                          className="users-status-btn"
+                          style={statusBadge(u.status)}
+                        >
+                          <span className="users-status-dot" />
+                          {u.status}
                         </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      <td className="users-last-login">
+                        {u.lastLoginAt
+                          ? formatDate(u.lastLoginAt)
+                          : 'Never'}
+                      </td>
+
+                      <td className="users-actions">
+                        {!isCurrent ? (
+                          <button
+                            onClick={() =>
+                              deleteUser(u._id)
+                            }
+                            disabled={isBusy}
+                            className="users-delete-btn"
+                            aria-label={`Remove ${u.name}`}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        ) : (
+                          <MoreHorizontal
+                            size={17}
+                            className="users-more-icon"
+                          />
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -235,8 +457,189 @@ export function Users() {
       </div>
 
       {showModal && (
-        <AddUserModal onClose={() => setShowModal(false)} onCreated={(u) => setUsers((prev) => [u, ...prev])} />
+        <AddUserModal
+          onClose={() => setShowModal(false)}
+          onCreated={(u) =>
+            setUsers((prev) => [u, ...prev])
+          }
+        />
       )}
     </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+function MiniStat({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="surface-card users-stat">
+      <div className="users-stat-icon">
+        {icon}
+      </div>
+
+      <div>
+        <p className="users-stat-label">
+          {label}
+        </p>
+
+        <p className="users-stat-value tabular-nums">
+          {value}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Avatar({ name }: { name: string }) {
+  const initials = name
+    .split(' ')
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+
+  return (
+    <div className="users-avatar">
+      {initials}
+    </div>
+  );
+}
+
+function PracticePopover({
+  user,
+  practices,
+  onToggle,
+  onClose,
+}: {
+  user: User;
+  practices: Practice[];
+  onToggle: (
+    userId: string,
+    practiceId: string
+  ) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="users-practice-popover">
+      <div className="users-popover-header">
+        <div>
+          <p className="users-popover-title">
+            Practice access
+          </p>
+
+          <p className="users-popover-subtitle">
+            Choose which practices this user can access.
+          </p>
+        </div>
+
+        <button
+          onClick={onClose}
+          className="users-popover-close"
+        >
+          <X size={15} />
+        </button>
+      </div>
+
+      <div className="users-practice-list">
+        {practices.length === 0 ? (
+          <div className="users-no-practices">
+            No practices available.
+          </div>
+        ) : (
+          practices.map((practice) => {
+            const checked = (
+              user.assignedPracticeIds || []
+            ).includes(practice._id);
+
+            return (
+              <label
+                key={practice._id}
+                className="users-practice-option"
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() =>
+                    onToggle(
+                      user._id,
+                      practice._id
+                    )
+                  }
+                />
+
+                <Building2 size={14} />
+
+                <span>
+                  {practice.groupName}
+                </span>
+              </label>
+            );
+          })
+        )}
+      </div>
+
+      <div className="users-popover-footer">
+        <button onClick={onClose}>
+          Done
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function EmptyState({
+  hasSearch,
+  onAdd,
+}: {
+  hasSearch: boolean;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="users-empty">
+      <div className="users-empty-icon">
+        <UsersIcon size={21} />
+      </div>
+
+      <p className="users-empty-title">
+        {hasSearch
+          ? 'No users found'
+          : 'No users yet'}
+      </p>
+
+      <p className="users-empty-text">
+        {hasSearch
+          ? 'Try searching with a different name, email, or role.'
+          : 'Add your first staff member to start managing portal access.'}
+      </p>
+
+      {!hasSearch && (
+        <button
+          className="users-primary-btn"
+          onClick={onAdd}
+        >
+          <Plus size={15} />
+          Add user
+        </button>
+      )}
+    </div>
+  );
+}
+
+function formatDate(date: string) {
+  return new Date(date).toLocaleDateString(
+    undefined,
+    {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    }
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import type { FormEvent } from 'react';
-import { Sparkles, Send } from 'lucide-react';
+import { Sparkles, Send, Bot, UserRound, ArrowUpRight } from 'lucide-react';
 import { apiClient } from '../api/client';
 
 interface Message {
@@ -16,26 +16,58 @@ const SUGGESTIONS = [
 
 export function AIAssistant() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', text: "Ask me about a provider's payer status, a practice's pending applications, or today's follow-ups." },
+    {
+      role: 'assistant',
+      text: "Ask me about a provider's payer status, a practice's pending applications, or today's follow-ups.",
+    },
   ]);
+
   const [input, setInput] = useState('');
   const [isThinking, setIsThinking] = useState(false);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages]);
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: 'smooth',
+    });
+  }, [messages, isThinking]);
 
   const send = async (question: string) => {
     if (!question.trim() || isThinking) return;
-    setMessages((prev) => [...prev, { role: 'user', text: question }]);
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: 'user',
+        text: question.trim(),
+      },
+    ]);
+
     setInput('');
     setIsThinking(true);
+
     try {
-      const res = await apiClient.post('/ai/query', { question });
-      setMessages((prev) => [...prev, { role: 'assistant', text: res.data.answer }]);
+      const res = await apiClient.post('/ai/query', {
+        question: question.trim(),
+      });
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: res.data.answer,
+        },
+      ]);
     } catch {
-      setMessages((prev) => [...prev, { role: 'assistant', text: 'Something went wrong reaching the assistant. Try again.' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: 'assistant',
+          text: 'Something went wrong reaching the assistant. Try again.',
+        },
+      ]);
     } finally {
       setIsThinking(false);
     }
@@ -47,77 +79,157 @@ export function AIAssistant() {
   };
 
   return (
-    <div className="ai-shell" style={{ display: 'flex', flexDirection: 'column' }}>
-      <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>AI assistant</h1>
-      <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: '0 0 20px' }}>
-        Grounded in your own data — it only answers from what's actually in the portal.
-      </p>
+    <div className="ai-page">
+      {/* Header */}
+      <div className="ai-header">
+        <div>
+          <div className="ai-title-row">
+            <div className="ai-title-icon">
+              <Sparkles size={18} />
+            </div>
 
-      <div className="surface-card" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {messages.map((m, i) => (
-            <div
-              key={i}
-              style={{
-                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
-                maxWidth: '75%',
-                background: m.role === 'user' ? 'var(--accent)' : 'var(--bg-surface-2)',
-                color: m.role === 'user' ? '#fff' : 'var(--text-primary)',
-                borderRadius: 14,
-                padding: '10px 16px',
-                fontSize: 14.5,
-                lineHeight: 1.5,
-              }}
-            >
-              {m.text}
-            </div>
-          ))}
-          {isThinking && (
-            <div style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', fontSize: 13.5 }}>
-              <Sparkles size={14} /> Thinking…
-            </div>
-          )}
+            <h1>AI assistant</h1>
+          </div>
+
+          <p>
+            Ask questions about your credentialing data and get answers
+            grounded in the portal.
+          </p>
         </div>
 
-        {messages.length === 1 && (
-          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', padding: '0 24px 16px' }}>
-            {SUGGESTIONS.map((s) => (
-              <button
-                key={s}
-                onClick={() => send(s)}
-                style={{
-                  fontSize: 12.5, padding: '7px 12px', borderRadius: 20, border: '1px solid var(--border-strong)',
-                  background: 'var(--bg-surface)', color: 'var(--text-secondary)', cursor: 'pointer',
-                }}
+        <div className="ai-grounded-badge">
+          <span className="ai-grounded-dot" />
+          Grounded in portal data
+        </div>
+      </div>
+
+      {/* Chat */}
+      <div className="ai-chat-card">
+        <div className="ai-chat-body" ref={scrollRef}>
+          {messages.length === 1 && (
+            <div className="ai-welcome">
+              <div className="ai-welcome-icon">
+                <Sparkles size={22} />
+              </div>
+
+              <h2>How can I help?</h2>
+
+              <p>
+                I can look through your providers, practices, credentialing
+                records, and follow-ups to answer questions.
+              </p>
+            </div>
+          )}
+
+          <div className="ai-messages">
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`ai-message ${message.role === 'user'
+                    ? 'ai-message-user'
+                    : 'ai-message-assistant'
+                  }`}
               >
-                {s}
-              </button>
+                <div className="ai-message-avatar">
+                  {message.role === 'user' ? (
+                    <UserRound size={15} />
+                  ) : (
+                    <Sparkles size={15} />
+                  )}
+                </div>
+
+                <div className="ai-message-content">
+                  <span className="ai-message-label">
+                    {message.role === 'user' ? 'You' : 'AI assistant'}
+                  </span>
+
+                  <div className="ai-message-bubble">
+                    {message.text}
+                  </div>
+                </div>
+              </div>
             ))}
+
+            {isThinking && (
+              <div className="ai-message ai-message-assistant">
+                <div className="ai-message-avatar">
+                  <Sparkles size={15} />
+                </div>
+
+                <div className="ai-message-content">
+                  <span className="ai-message-label">AI assistant</span>
+
+                  <div className="ai-thinking">
+                    <span className="ai-thinking-icon">
+                      <Sparkles size={13} />
+                    </span>
+
+                    <span>Thinking</span>
+
+                    <span className="ai-thinking-dots">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Suggestions */}
+        {messages.length === 1 && !isThinking && (
+          <div className="ai-suggestions">
+            <div className="ai-suggestions-label">
+              <span>Try asking</span>
+            </div>
+
+            <div className="ai-suggestion-list">
+              {SUGGESTIONS.map((suggestion) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  onClick={() => send(suggestion)}
+                  className="ai-suggestion"
+                >
+                  <span>{suggestion}</span>
+                  <ArrowUpRight size={13} />
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: 10, padding: 16, borderTop: '1px solid var(--border)' }}>
-          <input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask a question…"
-            style={{
-              flex: 1, padding: '11px 14px', fontSize: 14.5, border: '1px solid var(--border-strong)',
-              borderRadius: 'var(--radius)', outline: 'none', fontFamily: 'var(--font-body)',
-            }}
-          />
+        {/* Composer */}
+        <form className="ai-composer" onSubmit={handleSubmit}>
+          <div className="ai-input-wrapper">
+            <input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask about providers, payers, practices, or follow-ups…"
+              disabled={isThinking}
+            />
+
+            <span className="ai-input-hint">Enter ↵</span>
+          </div>
+
           <button
             type="submit"
             disabled={isThinking || !input.trim()}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6, padding: '0 18px', border: 'none',
-              borderRadius: 'var(--radius)', background: isThinking || !input.trim() ? 'var(--text-muted)' : 'var(--accent)',
-              color: '#fff', fontWeight: 600, fontSize: 14, cursor: isThinking || !input.trim() ? 'not-allowed' : 'pointer',
-            }}
+            className="ai-send-button"
           >
-            <Send size={15} /> Send
+            <Send size={15} />
+            <span>Send</span>
           </button>
         </form>
+
+        <div className="ai-footer">
+          <Bot size={13} />
+          <span>
+            Responses are generated only from data available in your portal.
+          </span>
+        </div>
       </div>
     </div>
   );

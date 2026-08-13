@@ -1,17 +1,29 @@
 import { useEffect, useState } from 'react';
-import { Plus, Search, ChevronLeft, ChevronRight, ClipboardCheck, Pencil } from 'lucide-react';
+import {
+  Plus,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardCheck,
+  Pencil,
+  SlidersHorizontal,
+  ArrowUpRight,
+} from 'lucide-react';
 import { apiClient } from '../api/client';
 import { useToast } from '../context/ToastContext';
 import { CredentialingFormModal } from '../components/CredentialingFormModal';
-import { STATUS_OPTIONS, statusColors } from '../constants/credentialing';
-import type { CredentialingRecord, CredentialingStatus } from '../types';
-
-const badgeStyle: React.CSSProperties = {
-  fontSize: 12.5, fontWeight: 600, padding: '4px 12px', borderRadius: 20, display: 'inline-block',
-};
+import {
+  STATUS_OPTIONS,
+  statusColors,
+} from '../constants/credentialing';
+import type {
+  CredentialingRecord,
+  CredentialingStatus,
+} from '../types';
 
 export function CredentialingGrid() {
   const { showToast } = useToast();
+
   const [records, setRecords] = useState<CredentialingRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -20,18 +32,32 @@ export function CredentialingGrid() {
   const [pages, setPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  const [modalRecord, setModalRecord] = useState<CredentialingRecord | null | 'new'>(null);
+  const [modalRecord, setModalRecord] =
+    useState<CredentialingRecord | null | 'new'>(null);
 
   const fetchRecords = () => {
     setIsLoading(true);
+
     apiClient
-      .get('/credentialing', { params: { payerName: search || undefined, status: status || undefined, page, limit: 15 } })
+      .get('/credentialing', {
+        params: {
+          payerName: search || undefined,
+          status: status || undefined,
+          page,
+          limit: 12,
+        },
+      })
       .then((res) => {
         setRecords(res.data.records);
         setPages(res.data.pagination.pages || 1);
         setTotal(res.data.pagination.total || 0);
       })
-      .catch(() => showToast('Could not load the credentialing grid', 'error'))
+      .catch(() =>
+        showToast(
+          'Could not load the credentialing grid',
+          'error'
+        )
+      )
       .finally(() => setIsLoading(false));
   };
 
@@ -39,148 +65,415 @@ export function CredentialingGrid() {
 
   useEffect(() => {
     setPage(1);
+
     const timeout = setTimeout(fetchRecords, 350);
+
     return () => clearTimeout(timeout);
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
   const handleSaved = (record: CredentialingRecord) => {
     setRecords((prev) => {
       const exists = prev.some((r) => r._id === record._id);
-      return exists ? prev.map((r) => (r._id === record._id ? record : r)) : [record, ...prev];
+
+      return exists
+        ? prev.map((r) =>
+          r._id === record._id ? record : r
+        )
+        : [record, ...prev];
     });
   };
 
-  const handleInlineStatusChange = async (record: CredentialingRecord, newStatus: CredentialingStatus) => {
-    const prevRecords = records;
-    setRecords((prev) => prev.map((r) => (r._id === record._id ? { ...r, status: newStatus } : r)));
+  const handleInlineStatusChange = async (
+    record: CredentialingRecord,
+    newStatus: CredentialingStatus
+  ) => {
+    const previousRecords = records;
+
+    setRecords((prev) =>
+      prev.map((r) =>
+        r._id === record._id
+          ? { ...r, status: newStatus }
+          : r
+      )
+    );
+
     try {
-      const res = await apiClient.patch(`/credentialing/${record._id}`, { status: newStatus });
+      const res = await apiClient.patch(
+        `/credentialing/${record._id}`,
+        {
+          status: newStatus,
+        }
+      );
+
       handleSaved(res.data.record);
     } catch {
-      setRecords(prevRecords);
+      setRecords(previousRecords);
       showToast('Could not update status', 'error');
     }
   };
 
-  const providerName = (r: CredentialingRecord) => (typeof r.providerId === 'object' ? r.providerId.name : '—');
-  const practiceName = (r: CredentialingRecord) =>
-    typeof r.providerId === 'object' ? r.providerId.practiceId?.groupName || '—' : '—';
+  const providerName = (record: CredentialingRecord) =>
+    typeof record.providerId === 'object'
+      ? record.providerId.name
+      : '—';
+
+  const practiceName = (record: CredentialingRecord) =>
+    typeof record.providerId === 'object'
+      ? record.providerId.practiceId?.groupName || '—'
+      : '—';
+
+  const formatDate = (date?: string) => {
+    if (!date) return '—';
+
+    return new Date(date).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const getStatusLabel = (value: string) => {
+    return (
+      STATUS_OPTIONS.find((option) => option.value === value)
+        ?.label || value
+    );
+  };
+
+  const activeCount = records.filter(
+    (record) =>
+      record.status === 'active' ||
+      record.status === 'approved'
+  ).length;
 
   return (
-    <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+    <div className="credentialing-page">
+      {/* Header */}
+      <div className="credentialing-header">
         <div>
-          <h1 style={{ fontSize: 'var(--fs-page-title)', margin: '0 0 6px' }}>Credentialing grid</h1>
-          <p style={{ fontSize: 'var(--fs-body)', color: 'var(--text-secondary)', margin: 0 }}>
-            {total} payer record{total === 1 ? '' : 's'} across all providers.
+          <div className="credentialing-title-row">
+            <h1>Credentialing</h1>
+
+            <span className="credentialing-count">
+              {total}
+            </span>
+          </div>
+
+          <p>
+            Manage payer enrollment, credentialing status, and
+            expiration dates across your providers.
           </p>
         </div>
-        <button onClick={() => setModalRecord('new')} style={primaryButtonStyle}>
-          <Plus size={16} /> Add payer record
+
+        <button
+          onClick={() => setModalRecord('new')}
+          className="credentialing-add-button"
+        >
+          <Plus size={17} />
+          Add payer record
         </button>
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: '1 1 260px' }}>
-          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+      {/* Toolbar */}
+      <div className="credentialing-toolbar">
+        <div className="credentialing-search">
+          <Search size={17} />
+
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by payer name…"
-            className="input-control"
-            style={{ paddingLeft: 36 }}
+            placeholder="Search payer names..."
           />
+
+          {search && (
+            <button
+              type="button"
+              className="credentialing-search-clear"
+              onClick={() => setSearch('')}
+            >
+              Clear
+            </button>
+          )}
         </div>
-        <select value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="select-control" style={{ width: 180 }}>
-          <option value="">All statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s.value} value={s.value}>{s.label}</option>
-          ))}
-        </select>
+
+        <div className="credentialing-filter">
+          <SlidersHorizontal size={16} />
+
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setPage(1);
+            }}
+          >
+            <option value="">All statuses</option>
+
+            {STATUS_OPTIONS.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="credentialing-toolbar-meta">
+          <span>{total} total</span>
+
+          <span className="credentialing-toolbar-divider" />
+
+          <span>
+            {activeCount} active on this page
+          </span>
+        </div>
       </div>
 
-      <div className="surface-card" style={{ overflow: 'hidden' }}>
+      {/* Content */}
+      <div className="credentialing-content">
         {isLoading ? (
-          <div style={{ padding: 48, textAlign: 'center', color: 'var(--text-muted)', fontSize: 'var(--fs-small)' }}>
-            Loading credentialing records…
-          </div>
+          <CredentialingSkeleton />
         ) : records.length === 0 ? (
-          <div style={{ padding: 56, textAlign: 'center' }}>
-            <ClipboardCheck size={32} style={{ color: 'var(--text-muted)', marginBottom: 12 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, margin: '0 0 4px' }}>No payer records yet</p>
-            <p style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)', margin: 0 }}>
-              {search || status ? 'Try a different search or filter.' : 'Add a payer record for a provider to get started.'}
+          <div className="credentialing-empty">
+            <div className="credentialing-empty-icon">
+              <ClipboardCheck size={24} />
+            </div>
+
+            <h3>No credentialing records found</h3>
+
+            <p>
+              {search || status
+                ? 'Try adjusting your search or filters.'
+                : 'Add your first payer record to start managing credentialing.'}
             </p>
+
+            {!search && !status && (
+              <button
+                onClick={() => setModalRecord('new')}
+                className="credentialing-empty-button"
+              >
+                <Plus size={16} />
+                Add payer record
+              </button>
+            )}
           </div>
         ) : (
-          <div className="table-scroll">
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14.5, minWidth: 820 }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Payer', 'Provider', 'Practice', 'Status', 'Expiration', 'Updated', ''].map((h) => (
-                    <th key={h} style={{ textAlign: 'left', padding: '14px 20px', fontSize: 12.5, fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((r) => (
-                  <tr key={r._id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td style={{ padding: '14px 20px', fontWeight: 600 }}>{r.payerName}</td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{providerName(r)}</td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-secondary)' }}>{practiceName(r)}</td>
-                    <td style={{ padding: '14px 20px' }}>
-                      <select
-                        value={r.status}
-                        onChange={(e) => handleInlineStatusChange(r, e.target.value as CredentialingStatus)}
-                        className="status-select"
-                        style={{ ...badgeStyle, ...statusColors(r.status), border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)' }}
-                      >
-                        {STATUS_OPTIONS.map((s) => (
-                          <option key={s.value} value={s.value}>{s.label}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
-                      {r.expirationDate ? new Date(r.expirationDate).toLocaleDateString() : '—'}
-                    </td>
-                    <td style={{ padding: '14px 20px', color: 'var(--text-muted)' }}>
-                      {new Date(r.updatedAt).toLocaleDateString()}
-                    </td>
-                    <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                      <button
-                        onClick={() => setModalRecord(r)}
-                        aria-label={`Edit ${r.payerName} record`}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', display: 'inline-flex' }}
-                      >
-                        <Pencil size={16} />
-                      </button>
-                    </td>
+          <>
+            {/* Desktop */}
+            <div className="credentialing-desktop-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Payer</th>
+                    <th>Provider</th>
+                    <th>Practice</th>
+                    <th>Status</th>
+                    <th>Expiration</th>
+                    <th>Updated</th>
+                    <th />
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+
+                <tbody>
+                  {records.map((record) => (
+                    <tr key={record._id}>
+                      <td>
+                        <div className="credentialing-payer">
+                          <div className="credentialing-payer-icon">
+                            <ClipboardCheck size={17} />
+                          </div>
+
+                          <div className="credentialing-payer-info">
+                            <strong>
+                              {record.payerName}
+                            </strong>
+
+                            <span>
+                              Payer credentialing
+                            </span>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span className="credentialing-provider">
+                          {providerName(record)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className="credentialing-practice">
+                          {practiceName(record)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <Status
+                          status={record.status}
+                          value={record.status}
+                          label={getStatusLabel(record.status)}
+                          onChange={(newStatus) =>
+                            handleInlineStatusChange(
+                              record,
+                              newStatus
+                            )
+                          }
+                        />
+                      </td>
+
+                      <td>
+                        <span className="credentialing-date">
+                          {formatDate(record.expirationDate)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span className="credentialing-date">
+                          {formatDate(record.updatedAt)}
+                        </span>
+                      </td>
+
+                      <td>
+                        <button
+                          className="credentialing-edit"
+                          onClick={() =>
+                            setModalRecord(record)
+                          }
+                          aria-label={`Edit ${record.payerName} record`}
+                        >
+                          <Pencil size={15} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile */}
+            <div className="credentialing-mobile-list">
+              {records.map((record) => (
+                <div
+                  key={record._id}
+                  className="credentialing-mobile-card"
+                >
+                  <div className="credentialing-mobile-top">
+                    <div className="credentialing-payer">
+                      <div className="credentialing-payer-icon">
+                        <ClipboardCheck size={17} />
+                      </div>
+
+                      <div className="credentialing-payer-info">
+                        <strong>
+                          {record.payerName}
+                        </strong>
+
+                        <span>
+                          Payer credentialing
+                        </span>
+                      </div>
+                    </div>
+
+                    <Status
+                      status={record.status}
+                      value={record.status}
+                      label={getStatusLabel(record.status)}
+                      onChange={(newStatus) =>
+                        handleInlineStatusChange(
+                          record,
+                          newStatus
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="credentialing-mobile-details">
+                    <div>
+                      <span>Provider</span>
+
+                      <strong>
+                        {providerName(record)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Practice</span>
+
+                      <strong>
+                        {practiceName(record)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Expiration</span>
+
+                      <strong>
+                        {formatDate(record.expirationDate)}
+                      </strong>
+                    </div>
+
+                    <div>
+                      <span>Updated</span>
+
+                      <strong>
+                        {formatDate(record.updatedAt)}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="credentialing-mobile-footer">
+                    <span>
+                      Credentialing record
+                    </span>
+
+                    <button
+                      onClick={() =>
+                        setModalRecord(record)
+                      }
+                    >
+                      <Pencil size={14} />
+                      Edit
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 
+      {/* Pagination */}
       {pages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginTop: 18 }}>
-          <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} style={pagerButtonStyle(page <= 1)}>
-            <ChevronLeft size={16} />
+        <div className="credentialing-pagination">
+          <button
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+          >
+            <ChevronLeft size={17} />
           </button>
-          <span style={{ fontSize: 'var(--fs-small)', color: 'var(--text-muted)' }}>Page {page} of {pages}</span>
-          <button disabled={page >= pages} onClick={() => setPage((p) => p + 1)} style={pagerButtonStyle(page >= pages)}>
-            <ChevronRight size={16} />
+
+          <span>
+            Page <strong>{page}</strong> of {pages}
+          </span>
+
+          <button
+            disabled={page >= pages}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            <ChevronRight size={17} />
           </button>
         </div>
       )}
 
       {modalRecord && (
         <CredentialingFormModal
-          record={modalRecord === 'new' ? null : modalRecord}
+          record={
+            modalRecord === 'new'
+              ? null
+              : modalRecord
+          }
           onClose={() => setModalRecord(null)}
           onSaved={handleSaved}
         />
@@ -189,14 +482,70 @@ export function CredentialingGrid() {
   );
 }
 
-const primaryButtonStyle: React.CSSProperties = {
-  display: 'flex', alignItems: 'center', gap: 6, background: 'var(--accent)', color: '#fff',
-  border: 'none', borderRadius: 'var(--radius)', padding: '11px 18px', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
-};
+function Status({
+  status,
+  value,
+  label,
+  onChange,
+}: {
+  status: string;
+  value: string;
+  label: string;
+  onChange: (status: CredentialingStatus) => void;
+}) {
+  const colors = statusColors(status);
 
-const pagerButtonStyle = (disabled: boolean): React.CSSProperties => ({
-  display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32,
-  border: '1px solid var(--border-strong)', borderRadius: 'var(--radius)', background: 'var(--bg-surface)',
-  color: disabled ? 'var(--text-muted)' : 'var(--text-secondary)', cursor: disabled ? 'not-allowed' : 'pointer',
-  opacity: disabled ? 0.5 : 1,
-});
+  return (
+    <select
+      value={value}
+      onChange={(e) =>
+        onChange(
+          e.target.value as CredentialingStatus
+        )
+      }
+      className="credentialing-status"
+      style={{
+        '--status-color': colors.color,
+        '--status-background': colors.background,
+      } as React.CSSProperties}
+      aria-label="Credentialing status"
+    >
+      {STATUS_OPTIONS.map((option) => (
+        <option
+          key={option.value}
+          value={option.value}
+        >
+          {option.label}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+function CredentialingSkeleton() {
+  return (
+    <div className="credentialing-skeleton">
+      {[1, 2, 3, 4, 5, 6].map((item) => (
+        <div
+          key={item}
+          className="credentialing-skeleton-row"
+        >
+          <div className="credentialing-skeleton-payer">
+            <div className="credentialing-skeleton-icon" />
+
+            <div className="credentialing-skeleton-lines">
+              <div />
+              <div />
+            </div>
+          </div>
+
+          <div className="credentialing-skeleton-line medium" />
+          <div className="credentialing-skeleton-line large" />
+          <div className="credentialing-skeleton-line short" />
+          <div className="credentialing-skeleton-line short" />
+          <div className="credentialing-skeleton-line medium" />
+        </div>
+      ))}
+    </div>
+  );
+}
