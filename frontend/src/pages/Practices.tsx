@@ -131,16 +131,17 @@ export function Practices() {
       </div>
 
       {/* Toolbar */}
-      <div className="practices-toolbar">
-        <div className="practices-search">
+      <div className="providers-toolbar">
+        <div className="providers-search">
           <Search size={17} />
-
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search practices, DBA, NPI, or tax ID"
             aria-label="Search practices"
+
           />
+
 
           {search && (
             <button
