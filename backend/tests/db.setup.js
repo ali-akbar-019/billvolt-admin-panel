@@ -26,7 +26,7 @@ beforeAll(async () => {
       // longer exists, and on older 6.x binaries alike.
       storageEngine: 'wiredTiger',
       // wiredTiger snapshots + slower disks can take a while on first start.
-      launchTimeout: 60000,
+      launchTimeout: 120000,
     },
   });
   await mongoose.connect(mongoServer.getUri());

@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { LoaderCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -13,9 +14,21 @@ export function ProtectedRoute({
   children,
   allowedRoles,
 }: ProtectedRouteProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
 
-  if (isLoading) {
+  // A logged-in user hitting a page above their role is signed out rather
+  // than silently redirected — staff pasting an admin URL must not see any
+  // part of it.
+  const roleForbidden = !!user && !!allowedRoles && !allowedRoles.includes(user.role);
+
+  useEffect(() => {
+    if (roleForbidden) {
+      logout();
+    }
+  }, [roleForbidden, logout]);
+
+  if (isLoading || roleForbidden) {
+    const forbidden = roleForbidden;
     return (
       <>
         <style>
@@ -122,11 +135,13 @@ export function ProtectedRoute({
             </div>
 
             <p className="billvolt-auth-loading-title">
-              Loading your workspace
+              {forbidden ? 'Session ended' : 'Loading your workspace'}
             </p>
 
             <p className="billvolt-auth-loading-subtitle">
-              Please wait while we verify your session.
+              {forbidden
+                ? "You don't have access to that page. Signing you out."
+                : 'Please wait while we verify your session.'}
             </p>
           </div>
         </div>
@@ -136,10 +151,6 @@ export function ProtectedRoute({
 
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
