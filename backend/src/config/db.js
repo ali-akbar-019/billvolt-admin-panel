@@ -4,16 +4,29 @@ const connectDB = async () => {
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.warn('[db] MONGODB_URI not set — skipping DB connection for now.');
+    const message = '[db] MONGODB_URI is not set.';
+
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error(message);
+    }
+
+    console.warn(`${message} Skipping DB connection in development.`);
     return;
   }
 
   try {
+    if (mongoose.connection.readyState === 1) {
+      console.log('[db] MongoDB already connected.');
+      return;
+    }
+
     await mongoose.connect(uri);
+
     console.log('[db] MongoDB connected successfully.');
   } catch (err) {
     console.error('[db] MongoDB connection failed:', err.message);
-    console.warn('[db] Continuing without a database connection. Set MONGODB_URI in .env once you have a cluster.');
+
+    throw err;
   }
 };
 
