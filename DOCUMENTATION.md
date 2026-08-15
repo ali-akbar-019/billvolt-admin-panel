@@ -1,7 +1,7 @@
 # BillVolt Admin Portal — Project Documentation
 
-> Live demo: **<ADD_LIVE_URL_HERE>**
-> Source code: **<ADD_GITHUB_REPO_URL_HERE>**
+> Live demo: **https://medical-credentialing-portal.vercel.app/**
+> Source code: **https://github.com/ali-akbar-019/billvolt-admin-panel**
 
 A full-stack admin portal for medical billing companies, credentialing
 services, and healthcare practices. It replaces spreadsheets, sticky notes,
@@ -61,21 +61,20 @@ what is approved, and what needs a follow-up call today.
 
 ## Project timeline
 
-Built as a series of modules between **4 August 2026 and 15 August 2026**:
+Built as a series of modules between **10 July 2026 and 16 August 2026**,
+with full production deployment on 16 August 2026:
 
 | Date | Work done |
 |---|---|
-| 4 Aug 2026 | Follow-ups page and workflow |
-| 5 Aug 2026 | Timeline (per-record activity log) |
-| 6 Aug 2026 | Reports summary API |
-| 7 Aug 2026 | AI Assistant (pattern-matching search) |
-| 8 Aug 2026 | Notification bell, AI chat UI |
-| 9 Aug 2026 | Org settings, security audit (NoSQL injection fix), Jest test suite, deployment config, docs split, final code review |
-| 10 Aug 2026 | Responsive pages, demo seed script, Phase 5 (audit log, CSV export, email notifications), API reference update |
-| 11 Aug 2026 | FR-001 per-practice user assignment (scoping everywhere), responsive sidebar |
-| 12 Aug 2026 | Recharts dashboard charts, improved logout flow, scrollbar styling |
-| 13 Aug 2026 | Full UI polish pass, cleanup, build fixes, QA checklist |
-| 15 Aug 2026 | Vercel deployment config finalization |
+| 10–16 Jul | **Module 1** — project setup and architecture, JWT auth (httpOnly cookies, refresh rotation, login rate limiting), dashboard UI and design system, user management (backend + frontend), database design, responsive layout |
+| 17–23 Jul | **Module 2** — practice model and API, practices frontend, practice workspace, provider model and API (encrypted sensitive fields), providers frontend, credentialing grid, dashboard integration |
+| 24–30 Jul | **Module 3** — follow-up model with automatic task creation, follow-ups dashboard, timeline engine, reports module, AI assistant (backend search service + chat frontend), notifications and performance |
+| 31 Jul – 6 Aug | **Module 4** — settings module, security audit (NoSQL injection fix), automated test suite, deployment configuration, documentation, final polish |
+| 7–9 Aug | UI/UX enhancement — clean white theme, larger type scale, refined spacing/shadows, improved empty states |
+| 10–11 Aug | FR-001 per-practice user assignment — scoping everywhere (practices, providers, credentialing, follow-ups, dashboard, reports, AI) + admin UI |
+| 12 Aug | Recharts dashboard charts, improved logout flow, scrollbar styling |
+| 13–15 Aug | UI polish pass, cleanup, QA checklist walkthrough, deployment config finalization |
+| 16 Aug | **Full production deployment** — backend on Render, frontend on Vercel, verified end to end against the live environment |
 
 ---
 
@@ -434,8 +433,8 @@ Production is split across **Render** (backend) and **Vercel** (frontend).
 5. Seed the first admin account against the production `MONGODB_URI` and walk
    the manual QA checklist once against the live URLs.
 
-> Live link: **<ADD_LIVE_URL_HERE>** (frontend on Vercel)
-> Repository: **<ADD_GITHUB_REPO_URL_HERE>**
+> Live link: **https://medical-credentialing-portal.vercel.app/** (frontend on Vercel)
+> Repository: **https://github.com/ali-akbar-019/billvolt-admin-panel**
 
 ---
 

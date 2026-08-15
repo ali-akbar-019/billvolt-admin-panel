@@ -1,0 +1,125 @@
+ZYNVEX SOLUTIONS
+Internship Daily Work Report
+BillVolt Admin Portal
+Full Name	Ali Akbar
+Internship ID	ZYNVEX CERT 0830
+Program	Full Stack Web Development Internship
+Project Title	BillVolt Admin Portal
+Report Type	Complete Daily Work Log, Module 1 through Module 4
+Overview
+This document records the daily work completed across all four modules of the BillVolt Admin Portal project, following the original roadmap agreed at the start of the internship. Every day listed below reflects work that was actually built, reviewed, and delivered, described in more detail than a simple task title. A section covering additional enhancement work beyond the original roadmap is included at the end of this document.
+ 
+Module 1: Foundation, Authentication, and Dashboard
+July 10 to July 16
+Day 1: Project Setup and Architecture
+Set up the complete project structure for both the frontend and the backend as two separate applications inside one repository. Configured React with TypeScript, Vite, Tailwind CSS, and React Router on the frontend, and Node.js with Express and MongoDB using Mongoose on the backend.
+Established the backend folder structure with clearly separated layers for config, controllers, models, routes, middleware, and utilities, so that every future module could follow the same pattern. Also set up environment variable handling through an environment file, with startup checks that stop the server from running in production if required secrets are missing.
+Day 2: Authentication and Authorization
+Implemented JWT based authentication using two separate tokens, a short lived access token and a longer lived refresh token, both stored in secure httpOnly cookies rather than local storage. Built the login, registration, refresh, and logout endpoints, along with a get current user endpoint.
+Added password hashing, role based fields on the user account so a user can be either admin or staff, rate limiting on the login endpoint to slow down repeated attempts, and refresh token rotation so that every time a token is refreshed, the previous one is invalidated.
+Day 3: Dashboard UI
+Built the main application shell used across every page, including the collapsible sidebar with navigation links, the top bar with the logged in user information, and the dashboard page itself with a set of summary stat cards.
+Established the design system used throughout the whole application at this stage, including the color palette, the font pairing, spacing rules, card styling, and button styling, so that every page built afterward would look consistent.
+Day 4: User Management Module, Backend
+Built the user data model covering name, email, password, role, and account status. Implemented the endpoints needed for an admin to list every user, update a user role or status, and remove a user, all protected so only an admin account can call them.
+Day 5: User Management Module, Frontend
+Built the user management page available to admin accounts, including a table listing every user with their role and status, an add user form for creating new accounts, and controls to change a role or deactivate an account directly from the table.
+Connected every action on this page to the backend endpoints built the day before, and added toast style notifications so the admin gets clear feedback after every action such as adding, updating, or removing a user.
+Day 6: Database Design
+Designed the core database schemas that the rest of the project would be built on top of, covering users, practices, providers, credentialing records, follow ups, and audit logs. Planned out the relationships between these collections, for example how a provider connects to a practice, and how a credentialing record connects to both a provider and a payer.
+Day 7: Responsive Layout
+Made the application layout fully responsive so it works properly on phones and tablets, not only on desktop screens. Added a mobile version of the sidebar that opens as a sliding drawer with a menu button in the top bar, along with a background overlay that closes the drawer when tapped.
+Also wrapped every data table in the application inside a horizontal scroll container, so tables with many columns stay readable on narrow screens instead of being cut off or squeezed.
+Additional Work Completed In This Module
+UI and UX Enhancement
+Reworked the visual design of the entire application into a clean white theme. Increased the base font size and heading sizes across every page for better readability, refined the card shadows and spacing, and redesigned the empty state screens shown on pages that are not built yet, so each one clearly explains what the page will contain and which module it belongs to.
+Admin Seed Script
+The original way to create the first admin account required answering questions in the terminal one by one. Replaced this with a single command script that creates or resets the first admin account automatically. It uses default login details if none are provided, or custom details set in the environment file, and can be run again safely without causing an error if the account already exists.
+ 
+Module 2: Practices, Providers, and Credentialing
+July 17 to July 23
+Day 1: Practice Model and API
+Built the practice data model covering group name, alternate business name, group identifier numbers, tax identifier, organization type, multiple service locations, mailing and billing addresses, and contact details.
+Built the full set of endpoints to create, view, update, and delete a practice, with support for searching by name or identifier, filtering by status, and paging through results so large lists load quickly. Every create, update, and delete action is recorded in the audit log.
+Day 2: Practices Frontend
+Built the practices list page, including a search box that filters results as the admin types, a status filter, and page navigation controls for moving through longer lists.
+Built a single add and edit form used for both creating a new practice and editing an existing one, connected directly to the API built the day before, so changes appear in the list immediately after saving.
+Day 3: Practice Workspace
+Built a dedicated workspace page that opens when a specific practice is selected, organized into tabs for practice information, the payer grid, and documents. At this stage the payer grid and documents tabs were placeholders describing what would be built in later days, while the practice information tab already showed full details.
+Day 4: Provider Model and API
+Built the provider data model, including provider type, individual identifier number, specialty, multiple professional licenses, multiple DEA registrations, and CAQH account details.
+Social security numbers and CAQH login credentials are encrypted before being stored in the database and are hidden from normal responses by default. Built a separate endpoint, restricted to admin accounts only, that reveals these sensitive fields, and every use of that endpoint is written to the audit log.
+Day 5: Providers Frontend
+Built the providers list page with the same pattern as the practices list, including search, status filtering, and page navigation. Built an add and edit form that requires every provider to be linked to a practice, selected from a dropdown of existing practices.
+Day 6: Credentialing Grid
+Built the credentialing record model, which connects a specific provider to a specific payer along with a status such as not started, submitted, approved, or denied, plus dates for submission, approval, and expiration.
+Built two places to view and manage this data, a global credentialing grid page showing every record across the whole application, and a payer grid tab inside each practice workspace showing only that practice records. Both allow the status to be changed directly from a dropdown in the table row without opening a separate form.
+Day 7: Dashboard Integration
+Connected the dashboard stat cards, which had been showing placeholder values since Module 1, to a live summary endpoint. The dashboard now shows the real count of active practices, the number of payer records approved in the current month, and the number of records still pending.
+Also added a providers tab inside the practice workspace, so the providers belonging to a practice can be viewed and new providers can be added directly from that practice page, without needing to go to the separate providers page.
+ 
+Module 3: Follow Ups, Reports, and AI Assistant
+July 24 to July 30
+Day 1: Follow Up Model and Automatic Task Creation
+Built the follow up data model, covering a title, a due date, a priority, an assigned user, and a status of pending or completed. Built the API for creating, listing, updating, and deleting follow ups, with the list endpoint able to group results into due today, upcoming, and overdue.
+Connected this to the credentialing record from Module 2, so setting a next follow up date on a payer record automatically creates a linked follow up task. Changing that date later reschedules the same task instead of creating a duplicate, and clearing the date removes the task entirely.
+Day 2: Follow Ups Dashboard
+Built the follow ups page with three tabs, overdue, due today, and upcoming, each showing a live count. Every follow up in the list can be marked complete with a single action, which removes it from the list and updates the counts immediately.
+Day 3: Timeline Engine
+Built a timeline feature for each payer record, allowing an unlimited number of dated entries such as calls, emails, or general notes to be logged over time, instead of relying on a single notes field that gets overwritten.
+This was added directly inside the payer record editing form, so staff can log a new activity and see the full history of past activity on that payer without leaving the form.
+Day 4: Reports Module
+Built a reports summary endpoint that calculates practice and provider totals, a breakdown of credentialing records by status, and the payers with the highest number of records.
+Built the reports page to present this information as simple bar style visualizations, giving a quick overall picture of where practices and providers currently stand without needing a separate charting tool.
+Day 5: AI Assistant Backend
+Built the AI assistant as a grounded question and answer system rather than a general purpose chat model, meaning it only ever answers using real data already stored in the application. It was built with a search service that looks up practices, providers, and payer records, and a separate agent layer that interprets the question and decides what to search for.
+The assistant can answer three types of questions, the credentialing status for a specific provider and payer, the list of pending payers for a specific practice, and which follow ups are due today. If a question matches more than one provider or practice, it asks for clarification instead of guessing, and every question asked is recorded in the audit log.
+Day 6: AI Assistant Frontend
+Built the chat style interface for the AI assistant, including message bubbles for the question and answer, a set of suggested example questions shown when the page first opens, and a loading indicator while a question is being answered.
+Day 7: Notifications and Performance
+Added a notification bell icon to the top bar, visible on every page, showing the combined count of overdue and due today follow ups. Clicking it opens a short dropdown list of those items with a link through to the full follow ups page.
+Also reviewed database performance for the follow ups feature and added an index matching the exact way that data is queried, so that lookups stay fast as the amount of data grows.
+ 
+Module 4: Settings, Security, Testing, and Deployment
+July 31 to August 06
+Day 1: Settings Module
+Built a single organization settings record covering the organization name, timezone, contact email, a session timeout value, and a preference for whether to send notifications on overdue follow ups.
+Built the settings page so any logged in user can view these values, but only an admin account can change them, with the form fields disabled for non admin users.
+Day 2 and Day 3: Security Audit
+Went through every route in the backend one by one to confirm that access control was applied correctly, checking that every route requires a logged in user, and that sensitive actions such as deleting records or viewing sensitive provider fields are further restricted to admin accounts only.
+During this review, found a real security gap, several list endpoints were taking search and filter values directly from the web address and passing them into database queries without checking their shape first. This could have allowed someone to manipulate a filter in a way that was not intended. Fixed this with a single piece of middleware applied across the whole application, rather than fixing each endpoint separately, and wrote up the full findings in a dedicated security document.
+Day 4: Testing
+Built an automated test suite covering the login process, account creation, practice management, and access control rules, using a temporary in memory database so the tests never touch real data.
+Also wrote a manual quality assurance checklist covering the parts of the application that are easier to verify by actually clicking through them, such as the mobile layout, the notification bell, and confirming sensitive fields never appear in a normal response.
+Day 5: Deployment Configuration
+Prepared configuration files for deploying the backend to Render and the frontend to Vercel, including environment variable setup, a health check route for Render to monitor, and a rewrite rule so the frontend routes work correctly after a page refresh.
+Wrote a deployment guide explaining the steps for both sides and how they need to be pointed at each other correctly for logins to work once deployed.
+Day 6: Documentation
+The project documentation had grown into a single long file that was becoming hard to read. Reorganized it into a short overview document, a complete reference listing every endpoint in the application, the security document, the deployment guide, and the testing checklist, so each piece of information has its own clear place.
+Day 7: Final Polish
+Did a final pass across the whole codebase, checking for anything left unused or inconsistent, and confirmed that every part of the backend starts up correctly without errors. Prepared a final project summary document that explains what was built, the reasoning behind some of the more important technical decisions, and what is intentionally left for future work.
+ 
+Additional Enhancement Work
+Beyond the original roadmap, the project also includes further enhancement work that adds to the quality and polish of the final product.
+
+August 07 to August 15
+UI and UX Enhancement, Completed
+As described under Module 1, the entire interface was reworked into a clean and modern white theme, with a larger and more legible type scale, refined spacing and shadows, and clearer empty state screens across pages that were not yet built. Later passes also upgraded the dashboard stat cards and charts to interactive graphs using a charting library, added live chart tooltips and legends, and code split the chart bundle so pages stay fast to load.
+
+Per-Practice User Assignment, Completed
+Added a per practice scoping feature that lets an admin assign specific practices to a staff account. From then on, that staff user only sees the practices they were assigned, and this filter is applied consistently everywhere, including practices, providers, credentialing, follow ups, dashboard, reports, and the AI assistant answers. Staff cannot create or edit records inside practices they are not assigned to, and creating a practice automatically assigns it to whoever created it. Assignment changes are recorded in the audit log.
+
+UI Polish and QA Pass, Completed
+Final visual polish pass across every page and screen size, including mobile drawer navigation, tightened top bar spacing on small screens, and a full quality assurance checklist walkthrough covering responsiveness, notifications, sensitive field exposure, and role based access.
+
+Further UI Enhancement, Planned
+Additional visual and interaction improvements are planned to further refine the interface beyond what was delivered in the original four modules. This work will be tracked and reported separately as it is completed.
+
+Full Deployment, August 16
+The application was fully deployed to production on August 16, with the backend running on Render and the frontend deployed on Vercel, and verified end to end against the live environment.
+
+End of report.
+
+
+https://medical-credentialing-portal.vercel.app/
+https://github.com/ali-akbar-019/billvolt-admin-panel

@@ -2,8 +2,8 @@
 
 **Run your credentialing operation without spreadsheets.**
 
-> Live demo: **<ADD_LIVE_URL_HERE>**
-> Source: **<ADD_GITHUB_REPO_URL_HERE>**
+> Live demo: **https://medical-credentialing-portal.vercel.app/**
+> Source: **https://github.com/ali-akbar-019/billvolt-admin-panel**
 > Full documentation: **[DOCUMENTATION.md](DOCUMENTATION.md)**
 
 BillVolt is a full-stack admin portal for **medical billing companies,
