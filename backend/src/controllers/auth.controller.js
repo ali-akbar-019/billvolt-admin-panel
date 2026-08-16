@@ -2,12 +2,17 @@ const User = require('../models/User.model');
 const { signAccessToken, signRefreshToken, verifyRefreshToken } = require('../utils/token.util');
 const { createSession, isSessionValid, revokeSession } = require('../utils/session.service');
 
+// const COOKIE_BASE = {
+//   httpOnly: true,
+//   secure: process.env.NODE_ENV === 'production',
+//   sameSite: 'strict',
+// };
 const COOKIE_BASE = {
   httpOnly: true,
   secure: process.env.NODE_ENV === 'production',
-  sameSite: 'strict',
+  sameSite: 'none',
+  path: '/',
 };
-
 const setAuthCookies = (res, accessToken, refreshToken) => {
   res.cookie('accessToken', accessToken, { ...COOKIE_BASE, maxAge: 15 * 60 * 1000 }); // 15 min
   res.cookie('refreshToken', refreshToken, { ...COOKIE_BASE, maxAge: 7 * 24 * 60 * 60 * 1000 }); // 7 days
