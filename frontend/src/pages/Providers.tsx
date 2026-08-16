@@ -75,7 +75,7 @@ export function Providers() {
 
   const practiceName = (p: Provider) =>
     typeof p.practiceId === 'object'
-      ? p.practiceId.groupName
+      ? p.practiceId?.groupName
       : 'No practice assigned';
 
   const getInitials = (name: string) => {

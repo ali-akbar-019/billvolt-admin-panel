@@ -70,7 +70,10 @@ export function Users() {
       .get('/practices', { params: { limit: 100 } })
       .then((res) => setPractices(res.data.practices))
       .catch(() =>
-        showToast('Could not load practices for assignment', 'error')
+        showToast(
+          'Could not load practices for assignment',
+          'error'
+        )
       );
   }, []);
 
@@ -106,14 +109,19 @@ export function Users() {
     userId: string,
     practiceId: string
   ) => {
-    const target = users.find((u) => u._id === userId);
+    const target = users.find(
+      (u) => u._id === userId
+    );
 
     if (!target) return;
 
-    const current = target.assignedPracticeIds || [];
+    const current =
+      target.assignedPracticeIds || [];
 
     const next = current.includes(practiceId)
-      ? current.filter((p) => p !== practiceId)
+      ? current.filter(
+        (p) => p !== practiceId
+      )
       : [...current, practiceId];
 
     updateUser(userId, {
@@ -122,7 +130,9 @@ export function Users() {
   };
 
   const deleteUser = async (id: string) => {
-    const target = users.find((u) => u._id === id);
+    const target = users.find(
+      (u) => u._id === id
+    );
 
     if (!target) return;
 
@@ -140,13 +150,16 @@ export function Users() {
       await apiClient.delete(`/users/${id}`);
 
       setUsers((prev) =>
-        prev.filter((u) => u._id !== id)
+        prev.filter(
+          (u) => u._id !== id
+        )
       );
 
       showToast('User removed');
     } catch (err: any) {
       showToast(
-        err?.response?.data?.error || 'Delete failed',
+        err?.response?.data?.error ||
+        'Delete failed',
         'error'
       );
     } finally {
@@ -155,16 +168,26 @@ export function Users() {
   };
 
   const filteredUsers = useMemo(() => {
-    const query = search.trim().toLowerCase();
+    const query = search
+      .trim()
+      .toLowerCase();
 
     if (!query) return users;
 
     return users.filter(
       (u) =>
-        u.name.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query) ||
-        u.role.toLowerCase().includes(query) ||
-        u.status.toLowerCase().includes(query)
+        u.name
+          .toLowerCase()
+          .includes(query) ||
+        u.email
+          .toLowerCase()
+          .includes(query) ||
+        u.role
+          .toLowerCase()
+          .includes(query) ||
+        u.status
+          .toLowerCase()
+          .includes(query)
     );
   }, [users, search]);
 
@@ -184,7 +207,7 @@ export function Users() {
     <div className="users-page">
       {/* Header */}
       <div className="users-header">
-        <div>
+        <div className="users-heading">
           <div className="users-title-row">
             <div className="users-title-icon">
               <UsersIcon size={19} />
@@ -202,7 +225,9 @@ export function Users() {
 
         <button
           className="users-primary-btn"
-          onClick={() => setShowModal(true)}
+          onClick={() =>
+            setShowModal(true)
+          }
         >
           <Plus size={16} />
           Add user
@@ -245,14 +270,20 @@ export function Users() {
 
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) =>
+                setSearch(e.target.value)
+              }
               placeholder="Search users..."
             />
 
             {search && (
               <button
+                type="button"
                 className="users-search-clear"
-                onClick={() => setSearch('')}
+                onClick={() =>
+                  setSearch('')
+                }
+                aria-label="Clear search"
               >
                 <X size={14} />
               </button>
@@ -260,11 +291,12 @@ export function Users() {
           </div>
 
           <span className="users-result-count">
-            {filteredUsers.length} of {users.length} users
+            {filteredUsers.length} of{' '}
+            {users.length} users
           </span>
         </div>
 
-        {/* Loading */}
+        {/* Content */}
         {isLoading ? (
           <div className="users-loading">
             Loading users…
@@ -272,7 +304,9 @@ export function Users() {
         ) : filteredUsers.length === 0 ? (
           <EmptyState
             hasSearch={Boolean(search)}
-            onAdd={() => setShowModal(true)}
+            onAdd={() =>
+              setShowModal(true)
+            }
           />
         ) : (
           <div className="table-scroll">
@@ -291,13 +325,17 @@ export function Users() {
               <tbody>
                 {filteredUsers.map((u) => {
                   const isCurrent =
-                    u._id === currentUser?._id;
+                    u._id ===
+                    currentUser?._id;
 
                   const isBusy =
                     busyId === u._id;
 
                   const assignedCount =
-                    (u.assignedPracticeIds || []).length;
+                    (
+                      u.assignedPracticeIds ||
+                      []
+                    ).length;
 
                   return (
                     <tr
@@ -308,9 +346,12 @@ export function Users() {
                           : 'users-row'
                       }
                     >
+                      {/* User */}
                       <td className="users-user-cell">
                         <div className="users-user">
-                          <Avatar name={u.name} />
+                          <Avatar
+                            name={u.name}
+                          />
 
                           <div className="users-user-info">
                             <div className="users-name-row">
@@ -332,19 +373,27 @@ export function Users() {
                         </div>
                       </td>
 
+                      {/* Role */}
                       <td>
                         <select
                           value={u.role}
                           disabled={
-                            isCurrent || isBusy
+                            isCurrent ||
+                            isBusy
                           }
                           onChange={(e) =>
-                            updateUser(u._id, {
-                              role: e.target.value as User['role'],
-                            })
+                            updateUser(
+                              u._id,
+                              {
+                                role: e.target
+                                  .value as User['role'],
+                              }
+                            )
                           }
                           className="users-role-select"
-                          style={roleBadge(u.role)}
+                          style={roleBadge(
+                            u.role
+                          )}
                         >
                           <option value="staff">
                             Staff
@@ -356,89 +405,130 @@ export function Users() {
                         </select>
                       </td>
 
+                      {/* Practice access */}
                       <td>
-                        {u.role === 'admin' ? (
+                        {u.role ===
+                          'admin' ? (
                           <span className="users-all-practices">
-                            <Building2 size={14} />
+                            <Building2
+                              size={14}
+                            />
                             All practices
                           </span>
                         ) : (
                           <div className="users-practice-wrapper">
                             <button
-                              disabled={isBusy}
+                              type="button"
+                              disabled={
+                                isBusy
+                              }
                               className="users-practice-btn"
                               onClick={() =>
                                 setAssigningId(
-                                  assigningId === u._id
+                                  assigningId ===
+                                    u._id
                                     ? null
                                     : u._id
                                 )
                               }
                             >
-                              <Building2 size={14} />
+                              <Building2
+                                size={14}
+                              />
 
-                              {assignedCount === 0
-                                ? 'No practices'
-                                : `${assignedCount} ${assignedCount === 1
-                                  ? 'practice'
-                                  : 'practices'
-                                }`}
+                              <span>
+                                {assignedCount ===
+                                  0
+                                  ? 'No practices'
+                                  : `${assignedCount} ${assignedCount ===
+                                    1
+                                    ? 'practice'
+                                    : 'practices'
+                                  }`}
+                              </span>
 
-                              <ChevronDown size={13} />
+                              <ChevronDown
+                                size={13}
+                              />
                             </button>
 
-                            {assigningId === u._id && (
-                              <PracticePopover
-                                user={u}
-                                practices={practices}
-                                onToggle={togglePractice}
-                                onClose={() =>
-                                  setAssigningId(null)
-                                }
-                              />
-                            )}
+                            {assigningId ===
+                              u._id && (
+                                <PracticePopover
+                                  user={u}
+                                  practices={
+                                    practices
+                                  }
+                                  onToggle={
+                                    togglePractice
+                                  }
+                                  onClose={() =>
+                                    setAssigningId(
+                                      null
+                                    )
+                                  }
+                                />
+                              )}
                           </div>
                         )}
                       </td>
 
+                      {/* Status */}
                       <td>
                         <button
+                          type="button"
                           disabled={
-                            isCurrent || isBusy
+                            isCurrent ||
+                            isBusy
                           }
                           onClick={() =>
-                            updateUser(u._id, {
-                              status:
-                                u.status === 'active'
-                                  ? 'disabled'
-                                  : 'active',
-                            })
+                            updateUser(
+                              u._id,
+                              {
+                                status:
+                                  u.status ===
+                                    'active'
+                                    ? 'disabled'
+                                    : 'active',
+                              }
+                            )
                           }
                           className="users-status-btn"
-                          style={statusBadge(u.status)}
+                          style={statusBadge(
+                            u.status
+                          )}
                         >
                           <span className="users-status-dot" />
                           {u.status}
                         </button>
                       </td>
 
+                      {/* Last login */}
                       <td className="users-last-login">
                         {u.lastLoginAt
-                          ? formatDate(u.lastLoginAt)
+                          ? formatDate(
+                            u.lastLoginAt
+                          )
                           : 'Never'}
                       </td>
 
+                      {/* Actions */}
                       <td className="users-actions">
                         {!isCurrent ? (
                           <button
+                            type="button"
                             onClick={() =>
-                              deleteUser(u._id)
+                              deleteUser(
+                                u._id
+                              )
                             }
                             disabled={isBusy}
                             className="users-delete-btn"
                             aria-label={`Remove ${u.name}`}
                           >
-                            <Trash2 size={15} />
+                            <Trash2
+                              size={15}
+                            />
                           </button>
                         ) : (
                           <MoreHorizontal
@@ -458,9 +548,14 @@ export function Users() {
 
       {showModal && (
         <AddUserModal
-          onClose={() => setShowModal(false)}
+          onClose={() =>
+            setShowModal(false)
+          }
           onCreated={(u) =>
-            setUsers((prev) => [u, ...prev])
+            setUsers((prev) => [
+              u,
+              ...prev,
+            ])
           }
         />
       )}
@@ -498,7 +593,11 @@ function MiniStat({
   );
 }
 
-function Avatar({ name }: { name: string }) {
+function Avatar({
+  name,
+}: {
+  name: string;
+}) {
   const initials = name
     .split(' ')
     .map((part) => part[0])
@@ -528,70 +627,97 @@ function PracticePopover({
   onClose: () => void;
 }) {
   return (
-    <div className="users-practice-popover">
-      <div className="users-popover-header">
-        <div>
-          <p className="users-popover-title">
-            Practice access
-          </p>
+    <>
+      {/* Mobile backdrop */}
+      <div
+        className="users-practice-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
-          <p className="users-popover-subtitle">
-            Choose which practices this user can access.
-          </p>
+      <div
+        className="users-practice-popover"
+        role="dialog"
+        aria-label="Practice access"
+      >
+        <div className="users-popover-header">
+          <div>
+            <p className="users-popover-title">
+              Practice access
+            </p>
+
+            <p className="users-popover-subtitle">
+              Choose which practices this user can access.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="users-popover-close"
+            aria-label="Close practice access"
+          >
+            <X size={15} />
+          </button>
         </div>
 
-        <button
-          onClick={onClose}
-          className="users-popover-close"
-        >
-          <X size={15} />
-        </button>
+        <div className="users-practice-list">
+          {practices.length === 0 ? (
+            <div className="users-no-practices">
+              No practices available.
+            </div>
+          ) : (
+            practices.map(
+              (practice) => {
+                const checked = (
+                  user.assignedPracticeIds ||
+                  []
+                ).includes(
+                  practice._id
+                );
+
+                return (
+                  <label
+                    key={practice._id}
+                    className="users-practice-option"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        onToggle(
+                          user._id,
+                          practice._id
+                        )
+                      }
+                    />
+
+                    <Building2
+                      size={14}
+                    />
+
+                    <span>
+                      {
+                        practice.groupName
+                      }
+                    </span>
+                  </label>
+                );
+              }
+            )
+          )}
+        </div>
+
+        <div className="users-popover-footer">
+          <button
+            type="button"
+            onClick={onClose}
+          >
+            Done
+          </button>
+        </div>
       </div>
-
-      <div className="users-practice-list">
-        {practices.length === 0 ? (
-          <div className="users-no-practices">
-            No practices available.
-          </div>
-        ) : (
-          practices.map((practice) => {
-            const checked = (
-              user.assignedPracticeIds || []
-            ).includes(practice._id);
-
-            return (
-              <label
-                key={practice._id}
-                className="users-practice-option"
-              >
-                <input
-                  type="checkbox"
-                  checked={checked}
-                  onChange={() =>
-                    onToggle(
-                      user._id,
-                      practice._id
-                    )
-                  }
-                />
-
-                <Building2 size={14} />
-
-                <span>
-                  {practice.groupName}
-                </span>
-              </label>
-            );
-          })
-        )}
-      </div>
-
-      <div className="users-popover-footer">
-        <button onClick={onClose}>
-          Done
-        </button>
-      </div>
-    </div>
+    </>
   );
 }
 
@@ -622,6 +748,7 @@ function EmptyState({
 
       {!hasSearch && (
         <button
+          type="button"
           className="users-primary-btn"
           onClick={onAdd}
         >
@@ -634,7 +761,9 @@ function EmptyState({
 }
 
 function formatDate(date: string) {
-  return new Date(date).toLocaleDateString(
+  return new Date(
+    date
+  ).toLocaleDateString(
     undefined,
     {
       month: 'short',
